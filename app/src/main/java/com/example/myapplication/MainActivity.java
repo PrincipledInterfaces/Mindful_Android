@@ -5,6 +5,8 @@ import android.app.AppOpsManager;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -72,21 +74,30 @@ public class MainActivity extends Activity {
     private void fetchAppUsageStats() {
         List<UsageStatsModel> appUsageInfoList = new ArrayList<>();
         UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
+        PackageManager packageManager = getPackageManager();
         Calendar calendar = Calendar.getInstance();
         long endTime = calendar.getTimeInMillis();
-        calendar.add(Calendar.YEAR, -1); // Or adjust according to your needs
+        calendar.add(Calendar.YEAR, -1); // Adjust according to your needs
         long startTime = calendar.getTimeInMillis();
 
         List<UsageStats> usageStatsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime);
         if (usageStatsList != null && !usageStatsList.isEmpty()) {
             for (UsageStats usageStats : usageStatsList) {
-                appUsageInfoList.add(new UsageStatsModel(usageStats.getPackageName(), usageStats.getTotalTimeInForeground()));
+                String packageName = usageStats.getPackageName();
+                try {
+                    ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
+                    String appName = (String) packageManager.getApplicationLabel(applicationInfo);
+                    appUsageInfoList.add(new UsageStatsModel(appName, usageStats.getTotalTimeInForeground()));
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace(); // Handle error
+                }
             }
         }
-
+        appUsageInfoList.sort((o1, o2) -> Long.compare(o2.getUsageDuration(), o1.getUsageDuration()));
         adapter = new UsageStatsAdapter(appUsageInfoList);
         recyclerView.setAdapter(adapter);
     }
+
 
     private boolean hasUsageStatsPermission() {
         AppOpsManager appOps = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);

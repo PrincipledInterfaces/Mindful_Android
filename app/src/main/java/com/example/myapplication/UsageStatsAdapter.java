@@ -17,13 +17,13 @@ public class UsageStatsAdapter extends RecyclerView.Adapter<UsageStatsAdapter.Vi
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView packageNameTextView;
+        TextView appNameTextView; // Renamed for clarity
         TextView usageDurationTextView;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            packageNameTextView = itemView.findViewById(R.id.usageTimeTextView);
-            usageDurationTextView = itemView.findViewById(R.id.appNameTextView);
+            appNameTextView = itemView.findViewById(R.id.appNameTextView); // Make sure this ID matches in your layout
+            usageDurationTextView = itemView.findViewById(R.id.usageTimeTextView); // Ensure correct ID is used
         }
     }
 
@@ -37,7 +37,7 @@ public class UsageStatsAdapter extends RecyclerView.Adapter<UsageStatsAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull UsageStatsAdapter.ViewHolder holder, int position) {
         UsageStatsModel appUsageInfo = appUsageInfoList.get(position);
-        holder.packageNameTextView.setText(appUsageInfo.getPackageName());
+        holder.appNameTextView.setText(appUsageInfo.getAppName()); // Display the app name
         long minutes = TimeUnit.MILLISECONDS.toMinutes(appUsageInfo.getUsageDuration());
         holder.usageDurationTextView.setText(minutes + " minutes");
     }
