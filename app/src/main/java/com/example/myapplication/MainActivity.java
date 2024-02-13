@@ -23,9 +23,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import android.content.Context;
+import android.provider.Settings;
 
 import android.content.Intent;
 import android.widget.Toast;
+
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -44,6 +50,7 @@ public class MainActivity extends Activity {
             long seconds = (uptimeMillis / 1000) % 60;
 
             uptimeTextView.setText("Device Uptime: " + hours + "h " + minutes + "m " + seconds + "s");
+            updateUptime(getApplicationContext(), hours, minutes, seconds);
             handler.postDelayed(this, 1000); // Schedule this runnable to run again after 1 second
         }
     };
@@ -51,6 +58,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FirebaseApp.initializeApp(this);
 
         setContentView(R.layout.activity_main);
         uptimeTextView = findViewById(R.id.uptimeDynamicTextView);
@@ -64,10 +72,18 @@ public class MainActivity extends Activity {
             fetchAppUsageStats();
         }
 
-//        setContentView(layout);
 
         handler.post(updateTimerThread); // Start the timer to update the uptime
     }
+
+    public void updateUptime(Context context, long hours, long minutes, long seconds) {
+        String deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID); // Get the unique device ID
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+        databaseReference.child("devices").child(deviceId).child("uptime").child("hours").setValue(hours);
+        databaseReference.child("devices").child(deviceId).child("uptime").child("minutes").setValue(minutes);
+        databaseReference.child("devices").child(deviceId).child("uptime").child("seconds").setValue(seconds);
+    }
+
 
     // Fetch app usage stats
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
