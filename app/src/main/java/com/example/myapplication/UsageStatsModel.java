@@ -1,21 +1,20 @@
 package com.example.myapplication;
 
 public class UsageStatsModel {
-    String packageName;
-    long usageDuration; // in milliseconds
+    private String appName; // Changed from packageName for clarity
+    private long usageDuration;
 
-    public UsageStatsModel(String packageName, long usageDuration) {
-        this.packageName = packageName;
+    public UsageStatsModel(String appName, long usageDuration) {
+        this.appName = appName;
         this.usageDuration = usageDuration;
     }
 
-    // Getters
-    public String getPackageName() {
-        return packageName;
+    public String getAppName() {
+        return appName;
     }
 
     public long getUsageDuration() {
         return usageDuration;
     }
-
 }
+
