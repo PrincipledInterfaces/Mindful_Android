@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.Model;
 
 public class UsageStatsModel {
     private String appName; // Changed from packageName for clarity

@@ -37,6 +37,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import com.example.myapplication.Adapter.UsageStatsAdapter;
+import com.example.myapplication.Model.UsageStatsModel;
+
 public class MainActivity extends Activity {
     private TextView uptimeTextView;
     private RecyclerView recyclerView;
