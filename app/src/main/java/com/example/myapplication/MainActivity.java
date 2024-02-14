@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.LinearLayout;
@@ -35,16 +36,21 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.example.myapplication.Adapter.UsageStatsAdapter;
 import com.example.myapplication.Model.UsageStatsModel;
 
 public class MainActivity extends Activity {
     private TextView uptimeTextView;
+    private DatabaseReference databaseReference;
     private RecyclerView recyclerView;
     private UsageStatsAdapter adapter;
     private Handler handler = new Handler();
+    String deviceId; // Get the unique device ID
     private Runnable updateTimerThread = new Runnable() {
         public void run() {
             long uptimeMillis = SystemClock.elapsedRealtime();
@@ -53,7 +59,7 @@ public class MainActivity extends Activity {
             long seconds = (uptimeMillis / 1000) % 60;
 
             uptimeTextView.setText("Device Uptime: " + hours + "h " + minutes + "m " + seconds + "s");
-            updateUptime(getApplicationContext(), hours, minutes, seconds);
+            updateUptime(hours, minutes, seconds);
             handler.postDelayed(this, 1000); // Schedule this runnable to run again after 1 second
         }
     };
@@ -62,7 +68,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FirebaseApp.initializeApp(this);
-
+        databaseReference = FirebaseDatabase.getInstance().getReference();
+        deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         setContentView(R.layout.activity_main);
         uptimeTextView = findViewById(R.id.uptimeDynamicTextView);
 
@@ -79,16 +86,12 @@ public class MainActivity extends Activity {
         handler.post(updateTimerThread); // Start the timer to update the uptime
     }
 
-    public void updateUptime(Context context, long hours, long minutes, long seconds) {
-        String deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID); // Get the unique device ID
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+    public void updateUptime(long hours, long minutes, long seconds) {
         databaseReference.child("devices").child(deviceId).child("uptime").child("hours").setValue(hours);
         databaseReference.child("devices").child(deviceId).child("uptime").child("minutes").setValue(minutes);
         databaseReference.child("devices").child(deviceId).child("uptime").child("seconds").setValue(seconds);
     }
 
-
-    // Fetch app usage stats
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
     private void fetchAppUsageStats() {
         List<UsageStatsModel> appUsageInfoList = new ArrayList<>();
@@ -106,16 +109,35 @@ public class MainActivity extends Activity {
                 try {
                     ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
                     String appName = (String) packageManager.getApplicationLabel(applicationInfo);
-                    appUsageInfoList.add(new UsageStatsModel(appName, usageStats.getTotalTimeInForeground()));
+                    long usageDuration = usageStats.getTotalTimeInForeground();
+                    appUsageInfoList.add(new UsageStatsModel(appName, usageDuration));
+
+                    // Upload each app's usage stats to Firebase
+                    Map<String, Object> appUsageUpdate = new HashMap<>();
+                    appUsageUpdate.put("appName", appName);
+                    appUsageUpdate.put("usageDuration(minutes)", TimeUnit.MILLISECONDS.toMinutes(usageDuration));
+
+                    // Use the package name as a unique key for each app
+                    if (packageName != null) {
+                        String safePackageName = packageName.replaceAll("[.$\\[\\]#\\/]", "_");
+                        databaseReference.child("devices").child(deviceId).child("appUsageStats").child(safePackageName).setValue(appUsageUpdate);
+                    } else {
+                        Log.e("FirebaseError", "Package name is null");
+                    }
+
                 } catch (PackageManager.NameNotFoundException e) {
                     e.printStackTrace(); // Handle error
                 }
             }
         }
+
+        // Assuming adapter and recyclerView are already defined and initialized
         appUsageInfoList.sort((o1, o2) -> Long.compare(o2.getUsageDuration(), o1.getUsageDuration()));
+
         adapter = new UsageStatsAdapter(appUsageInfoList);
         recyclerView.setAdapter(adapter);
     }
+
 
 
     private boolean hasUsageStatsPermission() {
