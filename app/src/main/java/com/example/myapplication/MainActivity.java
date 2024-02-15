@@ -19,6 +19,8 @@ import android.widget.LinearLayout;
 import android.view.Gravity;
 import android.graphics.Color;
 import android.os.Build;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -30,12 +32,15 @@ import android.provider.Settings;
 import android.content.Intent;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,10 +48,14 @@ import java.util.concurrent.TimeUnit;
 
 import com.example.myapplication.Adapter.UsageStatsAdapter;
 import com.example.myapplication.Model.UsageStatsModel;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends Activity {
     private TextView uptimeTextView;
     private DatabaseReference databaseReference;
+    private FirebaseFirestore FireStoreDB;
+    private LocalDate today;
     private RecyclerView recyclerView;
     private UsageStatsAdapter adapter;
     private Handler handler = new Handler();
@@ -60,7 +69,7 @@ public class MainActivity extends Activity {
 
             uptimeTextView.setText("Device Uptime: " + hours + "h " + minutes + "m " + seconds + "s");
             updateUptime(hours, minutes, seconds);
-            handler.postDelayed(this, 1000); // Schedule this runnable to run again after 1 second
+            handler.postDelayed(this, 300000); // Schedule this runnable to run again after 1 second
         }
     };
 
@@ -68,7 +77,15 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FirebaseApp.initializeApp(this);
+
+        today = LocalDate.now();
+
+        // Realtime DB
         databaseReference = FirebaseDatabase.getInstance().getReference();
+
+        // firestore DB
+        FireStoreDB = FirebaseFirestore.getInstance();
+
         deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         setContentView(R.layout.activity_main);
         uptimeTextView = findViewById(R.id.uptimeDynamicTextView);
@@ -90,6 +107,15 @@ public class MainActivity extends Activity {
         databaseReference.child("devices").child(deviceId).child("uptime").child("hours").setValue(hours);
         databaseReference.child("devices").child(deviceId).child("uptime").child("minutes").setValue(minutes);
         databaseReference.child("devices").child(deviceId).child("uptime").child("seconds").setValue(seconds);
+
+        Map<String, Object> uptime = new HashMap<>();
+        uptime.put("Date", today.toString());
+        uptime.put("hours", hours);
+        uptime.put("minutes", minutes);
+        uptime.put("seconds", seconds);
+        FireStoreDB.collection("devices").document(deviceId)
+                .set(uptime);
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
