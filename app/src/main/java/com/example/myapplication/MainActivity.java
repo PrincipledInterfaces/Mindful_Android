@@ -152,7 +152,7 @@ public class MainActivity extends Activity {
         // Enqueue the work with a unique name and a policy to replace existing work with the same name
         WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork(
                 "appUsageStatsCheck", // Unique name for the work
-                ExistingPeriodicWorkPolicy.REPLACE, // Replace existing work with this name if it exists
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, // Replace existing work with this name if it exists
                 periodicWorkRequest); // The work request
     }
 

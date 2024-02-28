@@ -82,12 +82,18 @@ public class AppUsageWorker extends Worker {
                 long[] formattedTime = appUsageInfo.getFormattedUsageTime();
 
                 Map<String, Object> appUsage = new HashMap<>();
-                appUsage.put("App name", appUsageInfo.getAppName());
-                appUsage.put("hours", formattedTime[0]);
-                appUsage.put("minutes", formattedTime[1]);
-                appUsage.put("seconds", formattedTime[2]);
+                Map<String, Object> timeAcum = new HashMap<>();
 
-                String documentPath = "AppUsageStats/" + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/Apps/" + packageName;
+                appUsage.put("app_name", appUsageInfo.getAppName());
+
+                timeAcum.put("hours", formattedTime[0]);
+                timeAcum.put("minutes", formattedTime[1]);
+                timeAcum.put("seconds", formattedTime[2]);
+
+                appUsage.put("foreground_time", timeAcum);
+
+
+                String documentPath = "AppUsageStats/" + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/AppsUsed/" + packageName;
                 firestoreDB.document(documentPath)
                         .set(appUsage)
                         .addOnSuccessListener(aVoid -> Log.d("AppUsageWorker", "Successfully stored app usage stats for " + packageName))
