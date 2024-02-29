@@ -98,7 +98,8 @@ public class AppUsageWorker extends Worker {
                 appUsage.put("foreground_time", timeAcum);
 
                 String deviceIdConcat = "/" + deviceId + "-" + DeviceModel + "/";
-                String documentPath = "AppUsageStats/"  + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + deviceIdConcat + packageName;
+                String dateObj = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/";
+                String documentPath = "AppUsageStats" + deviceIdConcat + dateObj + packageName;
                 firestoreDB.document(documentPath)
                         .set(appUsage)
                         .addOnSuccessListener(aVoid -> Log.d("AppUsageWorker", "Successfully stored app usage stats for " + packageName))
