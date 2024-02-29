@@ -8,6 +8,8 @@ import android.app.usage.UsageStatsManager;
 import android.app.usage.UsageStats;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.example.myapplication.Model.UsageStatsModel;
@@ -19,9 +21,9 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class AppUsageWorker extends Worker {
+    String deviceId;
 
     public AppUsageWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -35,6 +37,9 @@ public class AppUsageWorker extends Worker {
     }
 
     private void fetchAndStoreAppUsageStats() {
+        String DeviceModel = Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
+        deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+
         Context context = getApplicationContext();
         UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
         PackageManager packageManager = context.getPackageManager();
@@ -92,8 +97,8 @@ public class AppUsageWorker extends Worker {
 
                 appUsage.put("foreground_time", timeAcum);
 
-
-                String documentPath = "AppUsageStats/" + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/AppsUsed/" + packageName;
+                String deviceIdConcat = "/" + deviceId + "-" + DeviceModel + "/";
+                String documentPath = "AppUsageStats/"  + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + deviceIdConcat + packageName;
                 firestoreDB.document(documentPath)
                         .set(appUsage)
                         .addOnSuccessListener(aVoid -> Log.d("AppUsageWorker", "Successfully stored app usage stats for " + packageName))
