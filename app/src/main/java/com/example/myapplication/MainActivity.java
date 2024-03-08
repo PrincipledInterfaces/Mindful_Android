@@ -35,6 +35,7 @@ import android.content.Intent;
 import android.widget.Toast;
 
 import com.example.myapplication.Service.AppUsageService;
+import com.example.myapplication.Service.DeviceEventService;
 import com.example.myapplication.Worker.AppUsageWorker;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -131,8 +132,14 @@ public class MainActivity extends Activity {
         } else {
             recyclerView = findViewById(R.id.recyclerView);
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
-//            startAppUsageService();
-            schedulePeriodicAppUsageCheck();
+
+//            schedulePeriodicAppUsageCheck();
+            Intent serviceIntent = new Intent(this, DeviceEventService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
             fetchAppUsageStats();
         }
     }

@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Style for LinearLayout -->
-    <style name="LinearLayoutStyle">
-        <item name="android:gravity">center</item>
-        <item name="android:orientation">vertical</item>
-    </style>
 
     <!-- Style for TextView -->
-    <style name="TextViewStyle">
-        <item name="android:gravity">center_horizontal</item>
-        <item name="android:textSize">18sp</item>
-        <item name="android:textColor">#FF0000</item> <!-- Example color -->
-        <item name="android:padding">16dp</item>
-    </style>
 </resources>

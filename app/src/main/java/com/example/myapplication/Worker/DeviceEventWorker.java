@@ -1,61 +1,68 @@
 package com.example.myapplication.Worker;
 
-import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.work.Worker;
-import androidx.work.WorkerParameters;
-import android.app.usage.UsageStatsManager;
 import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
 import com.example.myapplication.Model.UsageStatsModel;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-public class AppUsageWorker extends Worker {
-    String deviceId;
+public class DeviceEventWorker extends Worker {
 
-    public AppUsageWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+    String deviceId;
+    public DeviceEventWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
     }
 
     @NonNull
     @Override
     public Result doWork() {
-        fetchAndStoreAppUsageStats();
+        // Receive unlock and lock timestamps
+        long unlockTime = getInputData().getLong("unlockTime", 0);
+        long lockTime = getInputData().getLong("lockTime", System.currentTimeMillis());
+
+        // It's assumed that validation ensuring unlockTime comes before lockTime is handled before enqueuing this worker
+        if (unlockTime > 0 && lockTime > unlockTime) {
+
+            storeDeviceEvent(unlockTime, lockTime);
+        }
+
         return Result.success();
     }
 
-    private void fetchAndStoreAppUsageStats() {
+    private void storeDeviceEvent(long unlockTime, long lockTime) {
+        long duration = lockTime - unlockTime;
+
         String DeviceModel = Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
         deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
 
+        FirebaseFirestore firestoreDB = FirebaseFirestore.getInstance();
         Context context = getApplicationContext();
         UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
         PackageManager packageManager = context.getPackageManager();
-        FirebaseFirestore firestoreDB = FirebaseFirestore.getInstance();
 
-        // Prepare the time range for today
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        long startTime = calendar.getTimeInMillis(); // Start of today
-        long endTime = System.currentTimeMillis(); // Current time
 
         // Query the usage stats
-        List<UsageStats> usageStatsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime);
+        List<UsageStats> usageStatsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, unlockTime, lockTime);
         Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
 
         if (usageStatsList != null && !usageStatsList.isEmpty()) {
@@ -75,9 +82,9 @@ public class AppUsageWorker extends Worker {
                     }
 
                     UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0));
-                    if (appUsageInfo != null) {
-                        appUsageInfo.addUsageTime(totalTimeInForeground);
-                    }
+
+                    appUsageInfo.addUsageTime(totalTimeInForeground);
+
                     aggregatedUsage.put(packageName, appUsageInfo);
                 }
             }
@@ -101,13 +108,20 @@ public class AppUsageWorker extends Worker {
 
                 String deviceIdConcat = "/" + deviceId + "-" + DeviceModel + "/";
                 String dateObj = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/";
-                String documentPath = "AppUsageStats" + deviceIdConcat + dateObj + packageName;
+                // create time obj for start time and end time
+                String startTimeObj = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(unlockTime));
+                String endTimeObj = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(lockTime));
+                String TimeDurObj = startTimeObj + "-" + endTimeObj + "/";
+
+//                String documentPath = "AppUsageStats" + deviceIdConcat + dateObj + TimeDurObj + "Apps/" +packageName;
+                String documentPath = deviceIdConcat + dateObj + TimeDurObj + packageName;
                 firestoreDB.document(documentPath)
                         .set(appUsage)
                         .addOnSuccessListener(aVoid -> Log.d("AppUsageWorker", "Successfully stored app usage stats for " + packageName))
                         .addOnFailureListener(e -> Log.e("AppUsageWorker", "Error storing app usage stats for " + packageName, e));
             }
-        }
 
+        }
     }
 }
+
