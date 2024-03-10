@@ -1,5 +1,6 @@
 package com.example.myapplication.Worker;
 
+import android.app.usage.UsageEvents;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
@@ -29,8 +30,10 @@ import java.util.Map;
 public class DeviceEventWorker extends Worker {
 
     String deviceId;
+    Context context;
     public DeviceEventWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
+        this.context = context;
     }
 
     @NonNull
@@ -50,78 +53,79 @@ public class DeviceEventWorker extends Worker {
     }
 
     private void storeDeviceEvent(long unlockTime, long lockTime) {
-        long duration = lockTime - unlockTime;
-
         String DeviceModel = Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
-        deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+        deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
 
         FirebaseFirestore firestoreDB = FirebaseFirestore.getInstance();
-        Context context = getApplicationContext();
         UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
         PackageManager packageManager = context.getPackageManager();
 
-
-        // Query the usage stats
-        List<UsageStats> usageStatsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, unlockTime, lockTime);
+        UsageEvents events = usm.queryEvents(unlockTime, lockTime);
         Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
+        Map<String, Long> lastForegroundTime = new HashMap<>();
 
-        if (usageStatsList != null && !usageStatsList.isEmpty()) {
-            for (UsageStats usageStats : usageStatsList) {
-                long totalTimeInForeground = usageStats.getTotalTimeInForeground();
-                String packageName = usageStats.getPackageName();
+        while (events.hasNextEvent()) {
+            UsageEvents.Event event = new UsageEvents.Event();
+            events.getNextEvent(event);
 
-                if (totalTimeInForeground > 0) {
-                    String appName;
-                    try {
-                        ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
-                        appName = (String) packageManager.getApplicationLabel(applicationInfo);
-                    } catch (PackageManager.NameNotFoundException e) {
-                        appName = packageName; // Fallback to package name if the app name is not found
-                        Log.e("AppUsageWorker", "Error fetching app info for " + packageName, e);
-                        continue; // Skip this package
+            if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                lastForegroundTime.put(event.getPackageName(), event.getTimeStamp());
+            } else if (event.getEventType() == UsageEvents.Event.MOVE_TO_BACKGROUND) {
+                long timeBgd = event.getTimeStamp();
+                Long foregroundTime = lastForegroundTime.remove(event.getPackageName());
+                if (foregroundTime != null) {
+                    long timeSpent = timeBgd - foregroundTime;
+                    if (timeSpent > 0) {
+                        String packageName = event.getPackageName();
+                        String appName;
+                        try {
+                            ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
+                            appName = (String) packageManager.getApplicationLabel(applicationInfo);
+                        } catch (PackageManager.NameNotFoundException ex) {
+                            appName = packageName; // Fallback to package name if the app name is not found
+                            Log.e("AppUsageWorker", "Error fetching app info for " + packageName, ex);
+                            continue; // Skip this package
+                        }
+                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, timeSpent));
+//                        appUsageInfo.addUsageTime(timeSpent);
+                        aggregatedUsage.put(packageName, appUsageInfo);
                     }
-
-                    UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0));
-
-                    appUsageInfo.addUsageTime(totalTimeInForeground);
-
-                    aggregatedUsage.put(packageName, appUsageInfo);
                 }
             }
-
-            // Write aggregated data to Firestore
-            for (Map.Entry<String, UsageStatsModel> entry : aggregatedUsage.entrySet()) {
-                String packageName = entry.getKey();
-                UsageStatsModel appUsageInfo = entry.getValue();
-                long[] formattedTime = appUsageInfo.getFormattedUsageTime();
-
-                Map<String, Object> appUsage = new HashMap<>();
-                Map<String, Object> timeAcum = new HashMap<>();
-
-                appUsage.put("app_name", appUsageInfo.getAppName());
-
-                timeAcum.put("hours", formattedTime[0]);
-                timeAcum.put("minutes", formattedTime[1]);
-                timeAcum.put("seconds", formattedTime[2]);
-
-                appUsage.put("foreground_time", timeAcum);
-
-                String deviceIdConcat = "/" + deviceId + "-" + DeviceModel + "/";
-                String dateObj = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/";
-                // create time obj for start time and end time
-                String startTimeObj = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(unlockTime));
-                String endTimeObj = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(lockTime));
-                String TimeDurObj = startTimeObj + "-" + endTimeObj + "/";
-
-//                String documentPath = "AppUsageStats" + deviceIdConcat + dateObj + TimeDurObj + "Apps/" +packageName;
-                String documentPath = deviceIdConcat + dateObj + TimeDurObj + packageName;
-                firestoreDB.document(documentPath)
-                        .set(appUsage)
-                        .addOnSuccessListener(aVoid -> Log.d("AppUsageWorker", "Successfully stored app usage stats for " + packageName))
-                        .addOnFailureListener(e -> Log.e("AppUsageWorker", "Error storing app usage stats for " + packageName, e));
-            }
-
         }
+
+        if (!aggregatedUsage.isEmpty()) {
+            String deviceIdConcat = "/" + deviceId + "-" + DeviceModel + "/";
+            String dateObj = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "/";
+            // Format start and end times
+            String startTimeObj = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(unlockTime));
+            String endTimeObj = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date(lockTime));
+            String timeDurObj = startTimeObj + "-" + endTimeObj + "/";
+
+            // Iterate through each entry in the aggregated usage map
+            for (Map.Entry<String, UsageStatsModel> entry : aggregatedUsage.entrySet()) {
+                if (!entry.getKey().equals("com.sec.android.app.launcher")) {
+                    String packageName = entry.getKey();
+                    UsageStatsModel appUsageInfo = entry.getValue();
+                    long[] formattedTime = appUsageInfo.getFormattedUsageTime(); // Assumes this method exists and returns an array of [hours, minutes, seconds]
+
+                    Map<String, Object> appUsage = new HashMap<>();
+                    appUsage.put("app_name", appUsageInfo.getAppName());
+                    appUsage.put("foreground_time", new HashMap<String, Object>() {{
+                        put("hours", formattedTime[0]);
+                        put("minutes", formattedTime[1]);
+                        put("seconds", formattedTime[2]);
+                    }});
+
+                    String documentPath = deviceIdConcat + dateObj + timeDurObj + packageName;
+                    firestoreDB.document(documentPath)
+                            .set(appUsage)
+                            .addOnSuccessListener(aVoid -> Log.d("AppUsageWorker", "Successfully stored app usage stats for " + packageName))
+                            .addOnFailureListener(e -> Log.e("AppUsageWorker", "Error storing app usage stats for " + packageName, e));
+                }
+                }
+        }
+
     }
 }
 
