@@ -21,12 +21,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 import com.example.myapplication.Model.Session;
 
@@ -68,7 +71,10 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     private void saveEvent(Context context, String eventType, long eventTime) {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         String date = dateFormat.format(new Date(eventTime));
         String time = timeFormat.format(new Date(eventTime));
 
@@ -107,7 +113,10 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
         long unlockTime = System.currentTimeMillis();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         String date = dateFormat.format(new Date(unlockTime));
         String time = timeFormat.format(new Date(unlockTime));
 
@@ -134,7 +143,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
             JSONObject event = new JSONObject();
             event.put("EventType", "Device Unlocked");
-            event.put("UnlockTime", unlockTime);
+//            event.put("UnlockTime", unlockTime);
 
             eventDetails.put("Event", event);
             dateEvents.put(eventDetails);
@@ -150,7 +159,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     private void handleScreenOff(Context context) {
         long screenOffTime = System.currentTimeMillis();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String date = dateFormat.format(new Date(screenOffTime));
         String time = timeFormat.format(new Date(screenOffTime));
 
@@ -182,8 +193,14 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
             JSONObject event = new JSONObject();
             event.put("EventType", eventType);
+
             if (eventType.equals("Device Locked")) {
-                event.put("LockTime", screenOffTime);
+//                event.put("LockTime", screenOffTime);
+                JSONObject appUsageObj = new JSONObject();
+                appUsageObj.put("app_name", "App Name");
+                appUsageObj.put("foreground_time", "ForegorundTime");
+                event.put("AppUsage", appUsageObj);
+
             }
             eventDetails.put("Event", event);
 
@@ -237,13 +254,16 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     }
 
     private void uploadDataToFirestore(Context context, List<Session> sessions) {
+
         for (Session session : sessions) {
             Map<String, Object> sessionData = new HashMap<>();
-            sessionData.put("StartTime", session.startTime);
-            sessionData.put("EndTime", session.endTime);
-            sessionData.put("Events", session.events);
+            sessionData.put("StartTime", session.getStartTime());
+            sessionData.put("EndTime", session.getEndTime());
+            sessionData.put("Events", session.getEvents());
+            sessionData.put("Duration(s)", session.getDuration());
 
-            String documentId = LocalDate.now() + "_" + session.startTime.replaceAll("[^a-zA-Z0-9]", "_");
+//            String documentId = nowInUtc.toLocalDate() + "_" + session.getStartTime().replaceAll("[^a-zA-Z0-9]", "_");
+            String documentId = Long.toString(System.currentTimeMillis() / 1000);
             String documentPath = "Devices/" + deviceId + "/Sessions/" + documentId;
             firestoreDB.document(documentPath)
                     .set(sessionData)
@@ -254,7 +274,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     }
 private void uploadDataToFirestore(Context context) {
 //    deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-    String todayDate = LocalDate.now().toString();
+    ZonedDateTime nowInUtc = ZonedDateTime.now(ZoneId.of("UTC"));
+    String todayDate = nowInUtc.toLocalDate().toString();
 
     String jsonData = loadDataFromFile(context);
     if (!jsonData.isEmpty()) {
@@ -322,15 +343,20 @@ private void uploadDataToFirestore(Context context) {
                 if (eventObj.getJSONObject("Event").has("UnlockTime")) {
                     long unlockTime = eventObj.getJSONObject("Event").optLong("UnlockTime");
                     eventDetails.put("UnlockTime", unlockTime);
+
                 } else if (eventObj.getJSONObject("Event").has("LockTime")) {
                     long lockTime = eventObj.getJSONObject("Event").optLong("LockTime");
                     eventDetails.put("LockTime", lockTime);
                 }
-                currentSession.events.add(eventDetails);
+//                else if (eventObj.getJSONObject("Event").has("AppUsage")) {
+//                    JSONObject appUsageObj = eventObj.getJSONObject("Event").getJSONObject("AppUsage");
+//                    eventDetails.put("AppUsage", appUsageObj);
+//                }
+                currentSession.getEvents().add(eventDetails);
             }
 
             if (("Device Locked".equals(eventType) || "Screen Off Without Unlock".equals(eventType)) && currentSession != null) {
-                currentSession.endTime = eventTime;
+                currentSession.setEndTime(eventTime);
                 sessions.add(currentSession);
                 currentSession = null; // End the current session
             }
