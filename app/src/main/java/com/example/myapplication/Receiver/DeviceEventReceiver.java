@@ -76,8 +76,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         String date = dateFormat.format(new Date(eventTime));
-        String time = timeFormat.format(new Date(eventTime));
-
+//        String time = timeFormat.format(new Date(eventTime));
+        long time = eventTime/1000;
         try {
             JSONObject root = new JSONObject();
             String jsonData = loadDataFromFile(context);
@@ -118,7 +118,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         String date = dateFormat.format(new Date(unlockTime));
-        String time = timeFormat.format(new Date(unlockTime));
+//        String time = timeFormat.format(new Date(unlockTime));
+        long time = unlockTime/1000;
 
         try {
             // Load existing data or initialize a new structure
@@ -163,7 +164,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String date = dateFormat.format(new Date(screenOffTime));
-        String time = timeFormat.format(new Date(screenOffTime));
+//        String time = timeFormat.format(new Date(screenOffTime));
+        long time = screenOffTime /1000;
 
         // Determine the event type based on the screen state
         String eventType = getScreenOnFlag(context) ? "Screen Off Without Unlock" : "Device Locked";
@@ -209,7 +211,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             // Save the updated JSON structure back to the file
             saveDataToFile(context, root.toString());
             // uploading data session wise with start and end time
-            uploadDataToFirestore(context, processEventsToSessions(dateEvents));
+//            uploadDataToFirestore(context, processEventsToSessions(dateEvents));
             // uploading in events array
             uploadDataToFirestore(context);
         } catch (JSONException e) {
@@ -290,19 +292,17 @@ private void uploadDataToFirestore(Context context) {
             List<Map<String, Object>> eventsList = new ArrayList<>();
             for (int i = 0; i < todayEvents.length(); i++) {
                 JSONObject eventObj = todayEvents.getJSONObject(i);
+                String eventType = eventObj.getJSONObject("Event").optString("EventType");
                 Map<String, Object> event = new HashMap<>();
                 event.put("Time", eventObj.getString("Time"));
-
-                JSONObject eventDetails = eventObj.getJSONObject("Event");
-                Map<String, Object> eventDetailsMap = new HashMap<>();
-                eventDetailsMap.put("EventType", eventDetails.getString("EventType"));
+                event.put("EventType", eventType);
 
                 // Include additional fields as necessary
-                if(eventDetails.has("UnlockTime")) {
-                    eventDetailsMap.put("UnlockTime", eventDetails.getLong("UnlockTime"));
-                }
+//                if(eventDetails.has("UnlockTime")) {
+//                    eventDetailsMap.put("UnlockTime", eventDetails.getLong("UnlockTime"));
+//                }
 
-                event.put("Event", eventDetailsMap);
+//                event.put("Event", eventDetailsMap);
                 eventsList.add(event);
             }
 
