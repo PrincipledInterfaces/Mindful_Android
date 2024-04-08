@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -38,6 +39,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     private FirebaseFirestore firestoreDB;
     private String deviceId;
 
+    String DeviceModel;
+
     public DeviceEventReceiver() {
         firestoreDB = FirebaseFirestore.getInstance();
     }
@@ -45,6 +48,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (deviceId == null) {
             deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
+        if (DeviceModel ==  null){
+            DeviceModel = Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
         }
         // Check if the Intent's action is not null
         if (intent.getAction() != null) {
@@ -276,6 +282,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     }
 private void uploadDataToFirestore(Context context) {
 //    deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+    String deviceIdConcat = deviceId + "-" + DeviceModel;
     ZonedDateTime nowInUtc = ZonedDateTime.now(ZoneId.of("UTC"));
     String todayDate = nowInUtc.toLocalDate().toString();
 
@@ -307,7 +314,7 @@ private void uploadDataToFirestore(Context context) {
             }
 
             // Upload today's events
-            firestoreDB.collection("Devices").document(deviceId)
+            firestoreDB.collection("Devices").document(deviceIdConcat)
                     .collection("Events").document(todayDate)
                     .set(Map.of("Events", eventsList))
                     .addOnSuccessListener(aVoid -> Log.d("Firestore", "Successfully uploaded today's events."))
