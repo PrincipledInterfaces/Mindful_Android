@@ -197,22 +197,19 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             }
 
             JSONObject eventDetails = new JSONObject();
-            eventDetails.put("Time", time);
-
             JSONObject event = new JSONObject();
+
+            eventDetails.put("Time", time);
             event.put("EventType", eventType);
 
-            if (eventType.equals("Device Locked")) {
-//                event.put("LockTime", screenOffTime);
-                JSONObject appUsageObj = new JSONObject();
-                appUsageObj.put("app_name", "App Name");
-                appUsageObj.put("foreground_time", "ForegorundTime");
-                event.put("AppUsage", appUsageObj);
-
-            }
             eventDetails.put("Event", event);
 
             dateEvents.put(eventDetails);
+
+            if (eventType.equals("Device Locked")) {
+                //TODO
+
+            }
 
             // Save the updated JSON structure back to the file
             saveDataToFile(context, root.toString());
