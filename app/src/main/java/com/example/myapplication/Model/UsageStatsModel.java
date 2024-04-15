@@ -19,7 +19,7 @@ public class UsageStatsModel {
     }
 
     public long getUsageDuration() {
-        return usageDuration;
+        return usageDuration / 1000;
     }
     public void setUsageDuration(long usageDuration) {
         this.usageDuration = usageDuration;
