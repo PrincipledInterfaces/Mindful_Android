@@ -109,9 +109,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             JSONObject eventDetails = new JSONObject();
             eventDetails.put("Time", time);
 
-            JSONObject event = new JSONObject();
-            event.put("EventType", eventType);
-            eventDetails.put("Event", event);
+            eventDetails.put("EventType", eventType);
 
             eventsForDate.put(eventDetails);
 
@@ -168,11 +166,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             JSONObject eventDetails = new JSONObject();
             eventDetails.put("Time", time);
 
-            JSONObject event = new JSONObject();
-            event.put("EventType", "Device Unlocked");
-//            event.put("UnlockTime", unlockTime);
-
-            eventDetails.put("Event", event);
+            eventDetails.put("EventType", "Device Unlocked");
             dateEvents.put(eventDetails);
 
             // Save the updated JSON structure
@@ -217,12 +211,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             }
 
             JSONObject eventDetails = new JSONObject();
-            JSONObject event = new JSONObject();
 
             eventDetails.put("Time", time);
-            event.put("EventType", eventType);
-
-            eventDetails.put("Event", event);
+            eventDetails.put("EventType", eventType);
 
 
 
@@ -231,23 +222,15 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                 Map<String, UsageStatsModel> appUsage = fetchAppUsage(context, unlockTime, screenOffTime);
 
                 JSONArray appUsageDetails = new JSONArray();
-//                for (Map.Entry<String, UsageStatsModel> entry : appUsage.entrySet()) {
-//                    JSONObject appDetails = new JSONObject();
-//
-//                    appDetails.put("AppName", entry.getValue().getAppName());
-//                    appDetails.put("UsageTime", entry.getValue().getUsageDuration()); // Time in milliseconds
-//                    appUsageDetails.put(appDetails);
-//
-//
-//                }
+
                 for (Map.Entry<String, UsageStatsModel> entry : appUsage.entrySet()) {
                     JSONObject appDetails = new JSONObject();
+                    JSONArray appDetailsArr = new JSONArray();
+
                     appDetails.put("EventType", entry.getValue().getAppName());  // Using "EventType" for app name
                     appDetails.put("Time", entry.getValue().getUsageDuration());  // Using seconds for usage time
 
-                    JSONObject eventAppUsage = new JSONObject();
-                    eventAppUsage.put("Event", appDetails);
-                    appUsageDetails.put(eventAppUsage);
+                    appUsageDetails.put(appDetails);
                 }
 
                 // Add the app usage array to the event details
@@ -267,45 +250,6 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         }
     }
 
-//    private Map<String, UsageStatsModel> fetchAppUsage(Context context, long unlockTime, long lockTime) {
-//        UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
-//        PackageManager packageManager = context.getPackageManager();
-//
-//        UsageEvents events = usm.queryEvents(unlockTime, lockTime);
-//        Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
-//        Map<String, Long> lastForegroundTime = new HashMap<>();
-//
-//        while (events.hasNextEvent()) {
-//            UsageEvents.Event event = new UsageEvents.Event();
-//            events.getNextEvent(event);
-//
-//            if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-//                lastForegroundTime.put(event.getPackageName(), event.getTimeStamp());
-//            } else if (event.getEventType() == UsageEvents.Event.MOVE_TO_BACKGROUND) {
-//                Long foregroundTime = lastForegroundTime.remove(event.getPackageName());
-//                if (foregroundTime != null) {
-//                    long timeSpent = event.getTimeStamp() - foregroundTime;
-//                    if (timeSpent > 0) {
-//                        String packageName = event.getPackageName();
-//                        String appName;
-//                        try {
-//                            ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
-//                            appName = (String) packageManager.getApplicationLabel(applicationInfo);
-//                        } catch (PackageManager.NameNotFoundException e) {
-//                            appName = packageName; // Fallback to package name if app name not found
-//                            continue; // Skip this package
-//                        }
-//
-//                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0));
-//                        appUsageInfo.addUsageTime(timeSpent);
-//                        aggregatedUsage.put(packageName, appUsageInfo);
-//                    }
-//                }
-//            }
-//        }
-//
-//        return aggregatedUsage;
-//    }
 
     private Map<String, UsageStatsModel> fetchAppUsage(Context context, long unlockTime, long lockTime) {
         UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
@@ -314,6 +258,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         UsageEvents events = usm.queryEvents(unlockTime, lockTime);
         Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
         Map<String, Long> lastForegroundTime = new HashMap<>();
+        int Order = 0;
 
         while (events.hasNextEvent()) {
             UsageEvents.Event event = new UsageEvents.Event();
@@ -335,15 +280,20 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                     if (timeSpent > 0) {
                         String packageName = event.getPackageName();
                         String appName;
+                        Order++;
                         try {
                             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
                             appName = (String) packageManager.getApplicationLabel(applicationInfo);
+                            if (packageName.contains("com.whatsapp.w4b")){
+                                appName = "WhatsApp Business";
+                            }
                         } catch (PackageManager.NameNotFoundException e) {
                             appName = packageName; // Fallback to package name if app name not found
                             continue; // Skip this package
                         }
 
-                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0));
+                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0, Order));
+                        Log.e("checkimngSAmeel", String.valueOf(appUsageInfo.getOrder()));
                         appUsageInfo.addUsageTime(timeSpent);
                         aggregatedUsage.put(packageName, appUsageInfo);
                     }
@@ -428,37 +378,25 @@ private void uploadDataToFirestore(Context context) {
 
             JSONArray todayEvents = jsonObject.getJSONArray(todayDate);
             List<Map<String, Object>> eventsList = new ArrayList<>();
+            Log.e("sameel", todayEvents.toString());
             for (int i = 0; i < todayEvents.length(); i++) {
                 JSONObject eventObj = todayEvents.getJSONObject(i);
-                String eventType = eventObj.getJSONObject("Event").optString("EventType");
+//                String eventType = eventObj.getJSONObject("Event").optString("EventType");
+
+                String eventType = eventObj.getString("EventType");
                 Map<String, Object> event = new HashMap<>();
                 event.put("Time", eventObj.getString("Time"));
                 event.put("EventType", eventType);
-
-                // Include App Usage if available
-//                if (eventObj.has("AppUsage")) {
-//                    JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
-//                    List<Map<String, Object>> appUsageList = new ArrayList<>();
-//                    for (int j = 0; j < appUsageArray.length(); j++) {
-//                        JSONObject appUsageObj = appUsageArray.getJSONObject(j);
-//                        Map<String, Object> appUsage = new HashMap<>();
-//                        appUsage.put("AppName", appUsageObj.getString("AppName"));
-//                        appUsage.put("UsageTime", appUsageObj.getLong("UsageTime"));
-//                        appUsageList.add(appUsage);
-//                    }
-//                    event.put("AppUsage", appUsageList);
-//                }
-//                eventsList.add(event);
 
                 if (eventObj.has("AppUsage")) {
                     JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
                     for (int j = 0; j < appUsageArray.length(); j++) {
                         JSONObject appUsageEvent = appUsageArray.getJSONObject(j);
-                        JSONObject appDetails = appUsageEvent.getJSONObject("Event");
+//                        JSONObject appDetails = appUsageEvent.getJSONObject("Event");
 
                         Map<String, Object> appEvent = new HashMap<>();
-                        appEvent.put("EventType", appDetails.getString("EventType"));  // "EventType" now contains the app name
-                        appEvent.put("Duration", appDetails.getLong("Time"));  // "Time" now contains the usage duration
+                        appEvent.put("EventType", appUsageEvent.getString("EventType"));  // "EventType" now contains the app name
+                        appEvent.put("Duration", appUsageEvent.getLong("Time"));  // "Time" now contains the usage duration
                         eventsList.add(appEvent);  // Treat each app usage as an independent event
                     }
                     eventsList.add(event);  // Add the original event as well
@@ -510,10 +448,7 @@ private void uploadDataToFirestore(Context context) {
                     long lockTime = eventObj.getJSONObject("Event").optLong("LockTime");
                     eventDetails.put("LockTime", lockTime);
                 }
-//                else if (eventObj.getJSONObject("Event").has("AppUsage")) {
-//                    JSONObject appUsageObj = eventObj.getJSONObject("Event").getJSONObject("AppUsage");
-//                    eventDetails.put("AppUsage", appUsageObj);
-//                }
+
                 currentSession.getEvents().add(eventDetails);
             }
 

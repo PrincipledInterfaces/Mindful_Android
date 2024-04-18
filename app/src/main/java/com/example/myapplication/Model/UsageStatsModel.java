@@ -6,6 +6,14 @@ public class UsageStatsModel {
     private String appName; // Changed from packageName for clarity
     private long usageDuration;
 
+    private int Order = 0;
+
+    public UsageStatsModel(String appName, long usageDuration, int Order) {
+        this.appName = appName;
+        this.usageDuration = usageDuration;
+        this.Order = Order;
+    }
+
     public UsageStatsModel(String appName, long usageDuration) {
         this.appName = appName;
         this.usageDuration = usageDuration;
@@ -17,6 +25,10 @@ public class UsageStatsModel {
     public String getAppName() {
         return appName;
     }
+
+//    public void setOrder(int Order){this.Order = Order;}
+
+    public int getOrder(){return Order;}
 
     public long getUsageDuration() {
         return usageDuration / 1000;
