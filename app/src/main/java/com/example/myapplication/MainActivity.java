@@ -16,6 +16,7 @@ import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.view.Gravity;
@@ -40,6 +41,8 @@ import com.example.myapplication.Worker.AppUsageWorker;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -69,12 +72,19 @@ public class MainActivity extends Activity {
     private static final int USAGE_STATS_PERMISSION_REQUEST_CODE = 1;
     private DatabaseReference databaseReference;
     private FirebaseFirestore FireStoreDB;
+
+    FirebaseAuth auth;
+    Button button;
+    TextView textView;
+    FirebaseUser user;
     private LocalDate today;
     private RecyclerView recyclerView;
     private UsageStatsAdapter adapter;
     private BroadcastReceiver updateUIReceiver;
     private ArrayList<UsageStatsModel> appUsageInfoList = new ArrayList<>();
     private Handler handler = new Handler();
+
+
     String deviceId; // Get the unique device ID
     private Runnable updateTimerThread = new Runnable() {
         public void run() {
@@ -89,35 +99,6 @@ public class MainActivity extends Activity {
         }
     };
 
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        FirebaseApp.initializeApp(this);
-//
-//        today = LocalDate.now();
-//
-//        // Realtime DB
-//        databaseReference = FirebaseDatabase.getInstance().getReference();
-//
-//        // firestore DB
-//        FireStoreDB = FirebaseFirestore.getInstance();
-//
-//        deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-//        setContentView(R.layout.activity_main);
-//        uptimeTextView = findViewById(R.id.uptimeDynamicTextView);
-//
-//        if (!hasUsageStatsPermission()) {
-//            startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
-//            Toast.makeText(this, "Please grant usage access permission.", Toast.LENGTH_LONG).show();
-//        } else {
-//            recyclerView = findViewById(R.id.recyclerView);
-//            recyclerView.setLayoutManager(new LinearLayoutManager(this));
-//            fetchAppUsageStats();
-//        }
-//
-//
-//        handler.post(updateTimerThread); // Start the timer to update the uptime
-//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +106,29 @@ public class MainActivity extends Activity {
         FirebaseApp.initializeApp(this);
         // Set your content view
         setContentView(R.layout.activity_main);
+        auth = FirebaseAuth.getInstance();
+
+        button = findViewById(R.id.logout);
+        textView = findViewById(R.id.user_details);
+        user = auth.getCurrentUser();
+        if (user == null) {
+            Intent intent = new Intent(getApplicationContext(), Login.class);
+            startActivity(intent);
+            finish();
+        } else {
+            textView.setText("Welcome " + user.getEmail());
+        }
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FirebaseAuth.getInstance().signOut();
+//                auth.signOut();
+                Intent intent = new Intent(getApplicationContext(), Login.class);
+                startActivity(intent);
+                finish();
+            }
+        });
 
         // Check if usage stats permission is granted
         if (!hasUsageStatsPermission()) {
