@@ -293,7 +293,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                         }
 
                         UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0, Order));
-                        Log.e("checkimngSAmeel", String.valueOf(appUsageInfo.getOrder()));
+                        Log.e("orderCheck", String.valueOf(appUsageInfo.getOrder()));
                         appUsageInfo.addUsageTime(timeSpent);
                         aggregatedUsage.put(packageName, appUsageInfo);
                     }
