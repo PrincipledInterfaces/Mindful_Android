@@ -1,12 +1,12 @@
 package com.example.myapplication.Model;
-
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
 public class UsageStatsModel {
     private String appName; // Changed from packageName for clarity
     private long usageDuration;
 
-    private Integer Order = 0;
+    private int Order = 0;
 
     public UsageStatsModel(String appName, long usageDuration, int Order) {
         this.appName = appName;
@@ -28,10 +28,7 @@ public class UsageStatsModel {
 
 //    public void setOrder(int Order){this.Order = Order;}
 
-    public int getOrder(){
-//        return Order;
-        return (Order != null) ? Order : 0;
-    }
+    public int getOrder(){return Order;}
 
     public long getUsageDuration() {
         return usageDuration / 1000;
