@@ -117,6 +117,22 @@ public class MainActivity extends Activity {
             finish();
         } else {
             textView.setText("Welcome " + user.getEmail());
+            // Check if usage stats permission is granted
+            if (!hasUsageStatsPermission()) {
+                requestUsageStatsPermission();
+            } else {
+                recyclerView = findViewById(R.id.recyclerView);
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+//            schedulePeriodicAppUsageCheck();
+                Intent serviceIntent = new Intent(this, DeviceEventService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent);
+                } else {
+                    startService(serviceIntent);
+                }
+                fetchAppUsageStats();
+            }
         }
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -130,22 +146,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Check if usage stats permission is granted
-        if (!hasUsageStatsPermission()) {
-            requestUsageStatsPermission();
-        } else {
-            recyclerView = findViewById(R.id.recyclerView);
-            recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-//            schedulePeriodicAppUsageCheck();
-            Intent serviceIntent = new Intent(this, DeviceEventService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
-            fetchAppUsageStats();
-        }
     }
 
     private void schedulePeriodicAppUsageCheck() {

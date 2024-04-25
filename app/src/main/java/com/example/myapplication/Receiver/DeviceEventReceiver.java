@@ -223,6 +223,11 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
             if (eventType.equals("Device Locked")) {
                 long unlockTime = getLastUnlockTime(context);
+                if (unlockTime == 0) {
+                    Log.e("DeviceEventReceiver", "Unlock time not found");
+                    return;
+                }
+
 //                Map<String, UsageStatsModel> appUsage = fetchAppUsage(context, unlockTime, screenOffTime);
                 Multimap<String, UsageStatsModel> appUsage = fetchAppUsage(context, unlockTime, screenOffTime);
 
@@ -319,7 +324,6 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
         return aggregatedUsage;
     }
-
 
 
 
