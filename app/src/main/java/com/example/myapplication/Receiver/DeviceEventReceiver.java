@@ -13,6 +13,8 @@ import android.provider.Settings;
 import android.util.Log;
 
 import com.example.myapplication.Model.UsageStatsModel;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 
@@ -30,6 +32,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -219,18 +223,26 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
             if (eventType.equals("Device Locked")) {
                 long unlockTime = getLastUnlockTime(context);
-                Map<String, UsageStatsModel> appUsage = fetchAppUsage(context, unlockTime, screenOffTime);
+//                Map<String, UsageStatsModel> appUsage = fetchAppUsage(context, unlockTime, screenOffTime);
+                Multimap<String, UsageStatsModel> appUsage = fetchAppUsage(context, unlockTime, screenOffTime);
 
                 JSONArray appUsageDetails = new JSONArray();
+                
+                List<Map<String, Object>> appEvents = new ArrayList<>();
+                for (Map.Entry<String, UsageStatsModel> entry : appUsage.entries()) {
+                    Map<String, Object> appEvent = new HashMap<>();
+                    appEvent.put("EventType", entry.getValue().getAppName());
+                    appEvent.put("Time", entry.getValue().getUsageDuration());
+                    appEvent.put("Order", entry.getValue().getOrder());
+                    appEvents.add(appEvent);
+                }
 
-                for (Map.Entry<String, UsageStatsModel> entry : appUsage.entrySet()) {
-                    JSONObject appDetails = new JSONObject();
-                    JSONArray appDetailsArr = new JSONArray();
+                // Sort app events by 'Order'
+                Collections.sort(appEvents, byOrder);
 
-                    appDetails.put("EventType", entry.getValue().getAppName());  // Using "EventType" for app name
-                    appDetails.put("Time", entry.getValue().getUsageDuration());  // Using seconds for usage time
-
-                    appUsageDetails.put(appDetails);
+                // Add sorted events to appUsageDetails JSONArray
+                for (Map<String, Object> sortedEvent : appEvents) {
+                    appUsageDetails.put(new JSONObject(sortedEvent));
                 }
 
                 // Add the app usage array to the event details
@@ -251,12 +263,14 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     }
 
 
-    private Map<String, UsageStatsModel> fetchAppUsage(Context context, long unlockTime, long lockTime) {
+    private Multimap<String, UsageStatsModel> fetchAppUsage(Context context, long unlockTime, long lockTime) {
         UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
         PackageManager packageManager = context.getPackageManager();
 
         UsageEvents events = usm.queryEvents(unlockTime, lockTime);
-        Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
+//        Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
+        Multimap<String, UsageStatsModel> aggregatedUsage = ArrayListMultimap.create();
+
         Map<String, Long> lastForegroundTime = new HashMap<>();
         int Order = 0;
 
@@ -292,10 +306,12 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                             continue; // Skip this package
                         }
 
-                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0, Order));
-                        Log.e("orderCheck", String.valueOf(appUsageInfo.getOrder()));
-                        appUsageInfo.addUsageTime(timeSpent);
-                        aggregatedUsage.put(packageName, appUsageInfo);
+//                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0, Order));
+                            aggregatedUsage.put(packageName, new UsageStatsModel(appName, timeSpent, Order));
+
+//                        Log.e("orderCheck", String.valueOf(appUsageInfo.getOrder()));
+//                        appUsageInfo.addUsageTime(timeSpent);
+//                        aggregatedUsage.put(packageName, appUsageInfo);
                     }
                 }
             }
@@ -303,6 +319,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
         return aggregatedUsage;
     }
+
 
 
 
@@ -361,8 +378,18 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
         }
     }
+
+
+    private static final Comparator<Map<String, Object>> byOrder = new Comparator<Map<String, Object>>() {
+        @Override
+        public int compare(Map<String, Object> o1, Map<String, Object> o2) {
+            return Integer.compare((int) o1.get("Order"), (int) o2.get("Order"));
+        }
+    };
+
 private void uploadDataToFirestore(Context context) {
 //    deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+
     String deviceIdConcat = deviceId + "-" + DeviceModel;
     ZonedDateTime nowInUtc = ZonedDateTime.now(ZoneId.of("UTC"));
     String todayDate = nowInUtc.toLocalDate().toString();
@@ -378,7 +405,6 @@ private void uploadDataToFirestore(Context context) {
 
             JSONArray todayEvents = jsonObject.getJSONArray(todayDate);
             List<Map<String, Object>> eventsList = new ArrayList<>();
-            Log.e("sameel", todayEvents.toString());
             for (int i = 0; i < todayEvents.length(); i++) {
                 JSONObject eventObj = todayEvents.getJSONObject(i);
 //                String eventType = eventObj.getJSONObject("Event").optString("EventType");
@@ -397,6 +423,7 @@ private void uploadDataToFirestore(Context context) {
                         Map<String, Object> appEvent = new HashMap<>();
                         appEvent.put("EventType", appUsageEvent.getString("EventType"));  // "EventType" now contains the app name
                         appEvent.put("Duration", appUsageEvent.getLong("Time"));  // "Time" now contains the usage duration
+                        appEvent.put("Order", appUsageEvent.getInt("Order"));
                         eventsList.add(appEvent);  // Treat each app usage as an independent event
                     }
                     eventsList.add(event);  // Add the original event as well
@@ -405,6 +432,7 @@ private void uploadDataToFirestore(Context context) {
                     eventsList.add(event); // Add regular events that aren't app usages
                 }
             }
+
 
             // Upload today's events
             firestoreDB.collection("Devices").document(deviceIdConcat)
