@@ -23,6 +23,9 @@ import android.view.Gravity;
 import android.graphics.Color;
 import android.os.Build;
 
+import android.view.Menu;
+import android.view.MenuItem;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,6 +37,8 @@ import android.provider.Settings;
 
 import android.content.Intent;
 import android.widget.Toast;
+import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.appbar.MaterialToolbar;
 
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
@@ -77,6 +82,7 @@ public class MainActivity extends Activity {
     Button button;
     TextView textView;
     FirebaseUser user;
+    MaterialToolbar toolbar;
     private LocalDate today;
     private RecyclerView recyclerView;
     private UsageStatsAdapter adapter;
@@ -108,7 +114,8 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         auth = FirebaseAuth.getInstance();
 
-        button = findViewById(R.id.logout);
+        button = findViewById(R.id.new_experiment);
+
         textView = findViewById(R.id.user_details);
         user = auth.getCurrentUser();
         if (user == null) {
@@ -116,7 +123,14 @@ public class MainActivity extends Activity {
             startActivity(intent);
             finish();
         } else {
-            textView.setText("Welcome " + user.getEmail());
+            textView.setText("Welcome, " + user.getEmail());
+            toolbar = findViewById(R.id.topAppBar);
+            toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    return onOptionsItemSelected(item);
+                }
+            });
             // Check if usage stats permission is granted
             if (!hasUsageStatsPermission()) {
                 requestUsageStatsPermission();
@@ -138,16 +152,33 @@ public class MainActivity extends Activity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FirebaseAuth.getInstance().signOut();
-//                auth.signOut();
-                Intent intent = new Intent(getApplicationContext(), Login.class);
-                startActivity(intent);
-                finish();
+
+                Toast.makeText(MainActivity.this, "Start new experiment", Toast.LENGTH_LONG).show();
             }
         });
 
 
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.menu_logout) {
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(getApplicationContext(), Login.class);
+            startActivity(intent);
+            finish();
+            return true;
+//        } else if (id == R.id.help) {
+//            showHelp();
+//            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
 
     private void schedulePeriodicAppUsageCheck() {
         // Define constraints, if needed (e.g., device charging, network connectivity)
