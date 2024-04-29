@@ -16,7 +16,7 @@
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="SquareButton">
-        <item name="cornerSize">30dp</item>
+        <item name="cornerSize">10dp</item>
     </style>
 
 
