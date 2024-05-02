@@ -16,7 +16,9 @@ import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 import android.view.Gravity;
@@ -38,7 +40,11 @@ import android.provider.Settings;
 import android.content.Intent;
 import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
+
+import com.example.myapplication.Adapter.DeviceEventAdapter;
+import com.example.myapplication.Model.DeviceEvent;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.*;
 
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
@@ -51,26 +57,40 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.example.myapplication.Adapter.UsageStatsAdapter;
 import com.example.myapplication.Model.UsageStatsModel;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private TextView uptimeTextView;
@@ -79,10 +99,11 @@ public class MainActivity extends Activity {
     private FirebaseFirestore FireStoreDB;
 
     FirebaseAuth auth;
-    Button button;
+    FloatingActionButton button;
     TextView textView;
     FirebaseUser user;
     MaterialToolbar toolbar;
+    TextView summaryTextView;
     private LocalDate today;
     private RecyclerView recyclerView;
     private UsageStatsAdapter adapter;
@@ -90,6 +111,8 @@ public class MainActivity extends Activity {
     private ArrayList<UsageStatsModel> appUsageInfoList = new ArrayList<>();
     private Handler handler = new Handler();
 
+    String jsonData;
+    List<DeviceEvent> events;
 
     String deviceId; // Get the unique device ID
     private Runnable updateTimerThread = new Runnable() {
@@ -135,29 +158,44 @@ public class MainActivity extends Activity {
             if (!hasUsageStatsPermission()) {
                 requestUsageStatsPermission();
             } else {
-                recyclerView = findViewById(R.id.recyclerView);
-                recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-//            schedulePeriodicAppUsageCheck();
                 Intent serviceIntent = new Intent(this, DeviceEventService.class);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(serviceIntent);
                 } else {
                     startService(serviceIntent);
                 }
-                fetchAppUsageStats();
+
+                updateSummary();
+
+                jsonData = readJsonFromFile("DeviceEvent.json");
+                events = parseDeviceEvents(jsonData);
+
+                displayEvents(events);
+
+
+//                fetchAppUsageStats();
             }
         }
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 Toast.makeText(MainActivity.this, "Start new experiment", Toast.LENGTH_LONG).show();
             }
         });
 
 
+    }
+
+    public void updateSummary() {
+        summaryTextView = findViewById(R.id.summaryTextView);
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+        String formattedDate = today.format(dateFormatter);
+
+        // Set the text to include today's date and daily summary
+        String dailySummaryText = getResources().getString(R.string.daily_summary); // assuming you have this string in strings.xml
+        summaryTextView.setText(formattedDate + " - " + dailySummaryText);
     }
 
     @Override
@@ -170,35 +208,15 @@ public class MainActivity extends Activity {
             startActivity(intent);
             finish();
             return true;
-//        } else if (id == R.id.help) {
-//            showHelp();
-//            return true;
+        }
+        else if (id == R.id.action_refresh) {
+            displayEvents(events);
+            Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
-
-
-
-    private void schedulePeriodicAppUsageCheck() {
-        // Define constraints, if needed (e.g., device charging, network connectivity)
-        Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED) // Example: Require network connectivity
-                .build();
-
-        // Create a PeriodicWorkRequest for AppUsageWorker to run every 15 minutes
-        PeriodicWorkRequest periodicWorkRequest =
-                new PeriodicWorkRequest.Builder(AppUsageWorker.class, 15, TimeUnit.MINUTES) // Minimum period is 15 minutes
-                        .setConstraints(constraints)
-                        .build();
-
-        // Enqueue the work with a unique name and a policy to replace existing work with the same name
-        WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork(
-                "appUsageStatsCheck", // Unique name for the work
-                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, // Replace existing work with this name if it exists
-                periodicWorkRequest); // The work request
-    }
-
 
 
     private boolean hasUsageStatsPermission() {
@@ -305,40 +323,93 @@ public class MainActivity extends Activity {
         recyclerView.setAdapter(adapter);
     }
 
-
-
-//    private boolean hasUsageStatsPermission() {
-//        AppOpsManager appOps = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
-//        int mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
-//                android.os.Process.myUid(), getPackageName());
-//        return mode == AppOpsManager.MODE_ALLOWED;
-//    }
-
-    private void applyTextViewStyle(TextView textView) {
-        textView.setTextSize(24); // SP
-        textView.setTextColor(Color.parseColor("#000000")); // A shade of purple
-        textView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
-        textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-//        textView.setShadowLayer(1.5f, 5, 5, Color.parseColor("#80000000")); // Shadow
-
-
-        int paddingDp = 16;
-        float density = getResources().getDisplayMetrics().density;
-        int paddingPixel = (int) (paddingDp * density);
-        textView.setPadding(paddingPixel, paddingPixel, paddingPixel, paddingPixel);
-
-        // Check and set background with rounded corners
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            textView.setBackground(ContextCompat.getDrawable(this, R.drawable.rounded_background));
-            textView.setClipToOutline(true);
-        }
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(updateTimerThread); // Stop the timer when the activity is destroyed
     }
+
+    private String readJsonFromFile(String filename) {
+        StringBuilder json = new StringBuilder();
+        try {
+//            InputStream inputStream = getAssets().open(filename); // If stored in assets folder
+             InputStream inputStream = openFileInput(filename); // If stored in internal storage
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                json.append(line);
+            }
+            reader.close();
+            return json.toString();
+        } catch (IOException e) {
+            Log.e("MainActivity", "Error reading JSON file", e);
+            return null;
+        }
+    }
+
+    private List<DeviceEvent> parseDeviceEvents(String jsonData){
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String todayDate = dateFormat.format(new Date());
+
+        try {
+            JSONObject jsonObject1 = new JSONObject(jsonData);
+
+            JSONArray todayEvents = jsonObject1.getJSONArray(todayDate);
+
+            List<DeviceEvent> eventsList = new ArrayList<>();
+
+            for (int i = 0; i < todayEvents.length(); i++) {
+                JSONObject eventObj = todayEvents.getJSONObject(i);
+
+                String eventType = eventObj.getString("EventType");
+
+                List<DeviceEvent> event = new ArrayList<>();
+                event.add(new DeviceEvent(eventType, eventObj.getLong("Time"), 0));
+
+                if (eventObj.has("AppUsage")) {
+                    JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
+                    for (int j = 0; j < appUsageArray.length(); j++) {
+                        JSONObject appUsageEvent = appUsageArray.getJSONObject(j);
+                        List<DeviceEvent> appEvent = new ArrayList<>();
+                        appEvent.add(new DeviceEvent(appUsageEvent.getString("EventType"), appUsageEvent.getLong("Time"), appUsageEvent.getInt("Order")));
+
+                        eventsList.add(appEvent.get(0));  // Treat each app usage as an independent event
+
+                    }
+                    eventsList.add(event.get(0)); // Add the main event
+                }
+                else {
+                    eventsList.add(event.get(0));
+                }
+            }
+
+            return eventsList;
+//            Log.e("saeel", String.valueOf(eventsList.get(3).getEventType()));
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+
+    }
+
+
+
+
+    private void displayEvents(List<DeviceEvent> events) {
+        DeviceEventAdapter adapter = new DeviceEventAdapter(this, events);
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(adapter);
+    }
+
+
+
+
+
+
 
 
 }

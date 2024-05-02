@@ -7,8 +7,11 @@
     <string name="already_have_an_account_login">Already have an account? Login</string>
     <string name="create_an_account">Create an account</string>
     <string name="logout">Logout</string>
-    <string name="welcome_message">Welcome, %1$s!</string>
     <string name="page_title">Dashboard</string>
     <string name="help">Help</string>
-    <string name="new_experiment">New Experiment</string>
+    <string name="welcome_user">Welcome, User!</string>
+    <string name="daily_summary">Daily Summary</string>
+    <string name="add_new_experiment">Add New Experiment</string>
+    <string name="refresh">Refresh</string>
+    <string name="duration_text">Duration</string>
 </resources>
