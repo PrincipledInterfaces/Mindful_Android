@@ -210,6 +210,9 @@ public class MainActivity extends Activity {
             return true;
         }
         else if (id == R.id.action_refresh) {
+            jsonData = readJsonFromFile("DeviceEvent.json");
+            events = parseDeviceEvents(jsonData);
+
             displayEvents(events);
             Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
             return true;
