@@ -1,4 +1,20 @@
 <resources>
     <string name="app_name">Mindful Monitor</string>
-    <string name="MindfulMonitor" />
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="register">Register</string>
+    <string name="already_have_an_account_login">Already have an account? Login</string>
+    <string name="create_an_account">Create an account</string>
+    <string name="logout">Logout</string>
+    <string name="page_title">Dashboard</string>
+    <string name="help">Help</string>
+    <string name="welcome_user">Welcome, User!</string>
+    <string name="daily_summary">Daily Summary</string>
+    <string name="add_new_experiment">Add New Experiment</string>
+    <string name="refresh">Refresh</string>
+    <string name="duration_text">Duration</string>
+    <string name="what_is_experiment">What is Experiment</string>
+    <string name="page_title_experiment_setup">Experiment Setup</string>
+    <string name="experiment_title">Experiment Title</string>
 </resources>

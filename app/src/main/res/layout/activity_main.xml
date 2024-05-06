@@ -2,52 +2,105 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
-<!--    <include-->
-<!--        android:id="@+id/includedLayout"-->
-<!--        layout="@layout/uptime_dynamic_layout"-->
+<!--    <com.google.android.material.appbar.AppBarLayout-->
 <!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent" />-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:id="@+id/top_nav"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        android:theme="@style/AppTheme.AppBarOverlay">-->
 
-    <!-- RecyclerView -->
+<!--        <com.google.android.material.appbar.MaterialToolbar-->
+<!--            android:id="@+id/topAppBar"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="?attr/actionBarSize"-->
+<!--            android:gravity="center_vertical"-->
+<!--            app:title="@string/page_title"-->
+<!--            app:menu="@menu/basic_menu"-->
+<!--            app:popupTheme="@style/AppTheme.PopupOverlay"-->
+<!--            style="@style/Widget.MaterialComponents.Toolbar.Primary"/>-->
+<!--&lt;!&ndash;            app:navigationIcon="@drawable/baseline_menu_24"&ndash;&gt;-->
 
-    <!-- Example Button at the bottom -->
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="410dp"
-        android:layout_height="643dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintBottom_toTopOf="@+id/addItemButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/uptimeDynamicTextView"
-        app:layout_constraintVertical_bias="0.1" />
+<!--    </com.google.android.material.appbar.AppBarLayout>-->
 
-    <Button
-        android:id="@+id/addItemButton"
+    <include
+        android:id="@+id/app_bar_inc"
+        layout="@layout/toolbar_test"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <!-- Header with Welcome Message -->
+    <TextView
+        android:id="@+id/user_details"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add Item"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:text="@string/welcome_user"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/app_bar_inc"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Summary of daily usage -->
+<!--    <TextView-->
+<!--        android:id="@+id/summaryTextView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/daily_summary"-->
+<!--        android:textSize="18sp"-->
+<!--        android:textColor="@color/textColor"-->
+<!--        android:gravity="center"-->
+<!--        android:padding="16dp"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/user_details"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent" />-->
 
     <TextView
-        android:id="@+id/uptimeDynamicTextView"
+        android:id="@+id/summaryTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textColor="@color/textColor"
+        android:gravity="center"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/user_details"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- RecyclerView for listing app usage details -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/lightBackground"
+        app:layout_constraintTop_toBottomOf="@id/summaryTextView"
+        app:layout_constraintBottom_toTopOf="@id/new_experiment"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+
+
+    <!-- new experiment button-->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/new_experiment"
+        android:src="@drawable/task_add_24"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="TextView"
+        android:contentDescription="@string/add_new_experiment"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_margin="16dp"/>
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
