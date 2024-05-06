@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.myapplication.Util.AuthenticationUtils;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
@@ -32,11 +33,28 @@ public class Login extends AppCompatActivity {
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser != null){
+            mAuth.addAuthStateListener(authStateListener);
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             startActivity(intent);
             finish();
         }
     }
+
+    private FirebaseAuth.AuthStateListener authStateListener = firebaseAuth -> {
+        if (firebaseAuth.getCurrentUser() == null) {
+            // User is logged out
+            AuthenticationUtils.logoutUser(Login.this);
+        }
+    };
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (authStateListener != null) {
+            FirebaseAuth.getInstance().removeAuthStateListener(authStateListener);
+        }
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

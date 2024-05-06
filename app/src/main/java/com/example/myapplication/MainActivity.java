@@ -43,6 +43,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.example.myapplication.Adapter.DeviceEventAdapter;
 import com.example.myapplication.Model.DeviceEvent;
+import com.example.myapplication.Util.AuthenticationUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.*;
 
@@ -75,6 +76,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -115,18 +117,6 @@ public class MainActivity extends Activity {
     List<DeviceEvent> events;
 
     String deviceId; // Get the unique device ID
-    private Runnable updateTimerThread = new Runnable() {
-        public void run() {
-            long uptimeMillis = SystemClock.elapsedRealtime();
-            long hours = (uptimeMillis / (1000 * 60 * 60)) % 24;
-            long minutes = (uptimeMillis / (1000 * 60)) % 60;
-            long seconds = (uptimeMillis / 1000) % 60;
-
-            uptimeTextView.setText("Device Uptime: " + hours + "h " + minutes + "m " + seconds + "s");
-            updateUptime(hours, minutes, seconds);
-//            handler.postDelayed(this, 5); // Schedule this runnable to run again after 1 second
-        }
-    };
 
 
     @Override
@@ -147,7 +137,8 @@ public class MainActivity extends Activity {
             finish();
         } else {
             textView.setText("Welcome, " + user.getEmail());
-            toolbar = findViewById(R.id.topAppBar);
+            toolbar = findViewById(R.id.top_app_toolbar);
+            toolbar.setTitle("Dashboard");
             toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
                 @Override
                 public boolean onMenuItemClick(MenuItem item) {
@@ -176,14 +167,14 @@ public class MainActivity extends Activity {
 //                fetchAppUsageStats();
             }
         }
-
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Start new experiment", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Starting new Experiment", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(getApplicationContext(), CreateExperiment.class);
+                startActivity(intent);
             }
         });
-
 
     }
 
@@ -203,10 +194,7 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
 
         if (id == R.id.menu_logout) {
-            FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(getApplicationContext(), Login.class);
-            startActivity(intent);
-            finish();
+            AuthenticationUtils.logoutUser(this);
             return true;
         }
         else if (id == R.id.action_refresh) {
@@ -329,7 +317,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(updateTimerThread); // Stop the timer when the activity is destroyed
     }
 
     private String readJsonFromFile(String filename) {

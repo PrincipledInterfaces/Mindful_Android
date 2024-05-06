@@ -14,4 +14,7 @@
     <string name="add_new_experiment">Add New Experiment</string>
     <string name="refresh">Refresh</string>
     <string name="duration_text">Duration</string>
+    <string name="what_is_experiment">What is Experiment</string>
+    <string name="page_title_experiment_setup">Experiment Setup</string>
+    <string name="experiment_title">Experiment Title</string>
 </resources>
