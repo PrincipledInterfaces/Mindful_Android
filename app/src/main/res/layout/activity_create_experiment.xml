@@ -119,6 +119,7 @@
         app:layout_constraintTop_toBottomOf="@id/schedule_label" />
 
     <RelativeLayout
+        android:id="@+id/running_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -146,6 +147,16 @@
             android:layout_marginStart="8dp"
             android:layout_centerVertical="true" />
     </RelativeLayout>
+
+
+
+    <include
+        layout="@layout/date_time_picker"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/running_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 
 
