@@ -16,5 +16,16 @@
     <string name="duration_text">Duration</string>
     <string name="what_is_experiment">What is Experiment</string>
     <string name="page_title_experiment_setup">Experiment Setup</string>
-    <string name="experiment_title">Experiment Title</string>
+    <string name="experiment_title">Title</string>
+    <string name="experiment_goal">Goal</string>
+    <string name="steps_taken">Steps Taken</string>
+    <string name="schedule">Schedule</string>
+    <string name="running">Running?</string>
+
+    <string-array name="schedule_options">
+        <item>Daily</item>
+        <item>Every 2 Days</item>
+        <item>Weekly</item>
+        <item>Every 2 Weeks</item>
+    </string-array>
 </resources>

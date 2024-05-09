@@ -28,13 +28,13 @@
         app:layout_constraintTop_toBottomOf="@id/app_bar_inc" />
 
     <EditText
-        android:id="@+id/editTextText"
+        android:id="@+id/experiment_title"
+        android:inputType="textShortMessage"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-
         android:hint="@string/experiment_title"
         android:paddingStart="12dp"
         android:paddingTop="8dp"
@@ -43,8 +43,112 @@
         android:textColorHint="?attr/colorOnBackground"
         android:textColor="?android:textColorPrimary"
         android:textSize="16sp"
+        android:autofillHints="Experiment Title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <EditText
+        android:id="@+id/experiment_goal"
+        android:inputType="textShortMessage|textMultiLine"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:hint="@string/experiment_goal"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:textColorHint="?attr/colorOnBackground"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="16sp"
+        android:autofillHints="Experiment Goal"
+        android:gravity="top"
+        android:minLines="4"
+        android:maxLines="4"
+        android:scrollbars="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/experiment_title" />
+
+    <EditText
+        android:id="@+id/steps_taken"
+        android:inputType="textShortMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:hint="@string/steps_taken"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:textColorHint="?attr/colorOnBackground"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="16sp"
+        android:autofillHints="Experiment Steps Taken"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/experiment_goal" />
+
+    <TextView
+        android:id="@+id/schedule_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/schedule"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/steps_taken" />
+
+    <Spinner
+        android:id="@+id/schedule_spinner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:entries="@array/schedule_options"
+        android:background="@drawable/spinner_background"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/schedule_label" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="16dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/schedule_spinner">
+
+        <TextView
+            android:id="@+id/running_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/running"
+            android:textSize="18sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/running_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/running_label"
+            android:layout_marginStart="8dp"
+            android:layout_centerVertical="true" />
+    </RelativeLayout>
+
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
