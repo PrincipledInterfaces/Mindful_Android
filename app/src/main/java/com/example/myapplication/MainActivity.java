@@ -88,6 +88,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
@@ -158,13 +159,13 @@ public class MainActivity extends Activity {
 
                 updateSummary();
 
-                jsonData = readJsonFromFile("DeviceEvent.json");
-                events = parseDeviceEvents(jsonData);
+//                jsonData = readJsonFromFile("DeviceEvent.json");
+//                events = parseDeviceEvents(jsonData);
+//
+//                displayEvents(events);
 
-                displayEvents(events);
+                fetchAndDisplayEvents();
 
-
-//                fetchAppUsageStats();
             }
         }
         button.setOnClickListener(new View.OnClickListener() {
@@ -176,6 +177,18 @@ public class MainActivity extends Activity {
             }
         });
 
+    }
+
+    public void fetchAndDisplayEvents(){
+        try {
+            jsonData = readJsonFromFile("DeviceEvent.json");
+            events = parseDeviceEvents(jsonData);
+            displayEvents(events);
+        } catch (Exception e) {
+            // This catch block handles any other unexpected errors
+            Log.e("Reading Json File", "An unexpected error occurred", e);
+            // Optionally, display a user-friendly message using Toast or Snackbar
+        }
     }
 
     public void updateSummary() {
@@ -198,10 +211,7 @@ public class MainActivity extends Activity {
             return true;
         }
         else if (id == R.id.action_refresh) {
-            jsonData = readJsonFromFile("DeviceEvent.json");
-            events = parseDeviceEvents(jsonData);
-
-            displayEvents(events);
+            fetchAndDisplayEvents();
             Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
             return true;
         }
