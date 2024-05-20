@@ -27,5 +27,6 @@
         <item>Every 2 Days</item>
         <item>Weekly</item>
         <item>Every 2 Weeks</item>
+        <item>Monthly</item>
     </string-array>
 </resources>

@@ -23,12 +23,16 @@ import java.util.Date;
 import java.text.ParseException;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
 import com.example.myapplication.Util.AuthenticationUtils;
+import com.example.myapplication.Worker.NotificationWorker;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.firestore.DocumentReference;
@@ -37,12 +41,21 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import androidx.core.view.WindowInsetsCompat;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+// notification worker
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.Data;
+
+import java.util.concurrent.TimeUnit;
 
 public class CreateExperiment extends AppCompatActivity {
     private EditText experimentTitleInput;
@@ -101,6 +114,25 @@ public class CreateExperiment extends AppCompatActivity {
             }
         });
 
+//        FirebaseMessaging.getInstance().getToken()
+//                .addOnCompleteListener(new OnCompleteListener<String>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<String> task) {
+//                        if (!task.isSuccessful()) {
+//                            Log.w("fcm", "Fetching FCM registration token failed", task.getException());
+//                            return;
+//                        }
+//
+//                        // Get new FCM registration token
+//                        String token = task.getResult();
+//
+//                        // Log and toast
+//
+//                        Log.d("fcm", token);
+//                        Toast.makeText(CreateExperiment.this, "fcm", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+
     }
 
     private void submitExperiment() {
@@ -120,6 +152,54 @@ public class CreateExperiment extends AppCompatActivity {
 
         }
     }
+    // Schedule a notification worker to run every 12 hours
+//    private void scheduleNotificationWorker(String title, String description, String schedule) {
+//        Data data = new Data.Builder()
+//                .putString("title", title)
+//                .putString("description", description)
+//                .build();
+//
+//        long repeatInterval = calculateRepeatInterval(schedule);
+//
+//        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(NotificationWorker.class, repeatInterval, TimeUnit.MILLISECONDS)
+//                .setInputData(data)
+//                .build();
+//
+//        WorkManager.getInstance(this).enqueue(workRequest);
+//    }
+    private void scheduleNotificationWorker(String title, String description, String schedule) {
+        Data data = new Data.Builder()
+                .putString("title", "Today is an INTERVENTION DAY for your <i>" + title + "</i> experiment.")
+                .putString("description", "Please remember to <b>" + description + "</b> today.")
+                .build();
+
+        if ("daily".equalsIgnoreCase(schedule)) {
+            scheduleDailyNotifications(data, "morningNotification", 8, 0); // Schedule morning notification at 8 AM
+            scheduleDailyNotifications(data, "eveningNotification", 20, 0); // Schedule evening notification at 8 PM
+        } else if ("weekly".equalsIgnoreCase(schedule)) {
+            scheduleWeeklyNotifications(data, "weeklyMorningNotification", 8, 0); // Schedule morning notification weekly
+            scheduleWeeklyNotifications(data, "weeklyEveningNotification", 20, 0); // Schedule evening notification weekly
+        } else if ("every 2 days".equalsIgnoreCase(schedule)) {
+            scheduleEvery2DaysNotifications(data, "every2DaysMorningNotification", 8, 0); // Schedule morning notification every 2 days
+            scheduleEvery2DaysNotifications(data, "every2DaysEveningNotification", 20, 0); // Schedule evening notification every 2 days
+        } else {
+            // Default to daily
+            scheduleDailyNotifications(data, "defaultMorningNotification", 8, 0); // Schedule morning notification at 8 AM
+            scheduleDailyNotifications(data, "defaultEveningNotification", 20, 0); // Schedule evening notification at 8 PM
+        }
+    }
+
+    // Cancel the notification worker
+    private void cancelNotificationWorker() {
+        WorkManager.getInstance(this).cancelAllWorkByTag("morningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("eveningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("weeklyMorningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("weeklyEveningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("every2DaysMorningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("every2DaysEveningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("defaultMorningNotification");
+        WorkManager.getInstance(this).cancelAllWorkByTag("defaultEveningNotification");
+    }
 
     private void saveExperimentToFirestore(String title, String goal, String steps, String schedule, boolean isRunning) {
         String deviceIdConcat = deviceId + "-" + DeviceModel;
@@ -135,16 +215,107 @@ public class CreateExperiment extends AppCompatActivity {
         experiment.put("steps", steps);
         experiment.put("schedule", schedule);
         experiment.put("isRunning", isRunning);
+        experiment.put("createdAt", FieldValue.serverTimestamp());
 
         db.collection("Devices").document(deviceIdConcat)
                 .collection("experiments").document(documentId)
                 .set(experiment)
-                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Experiment successfully written!"))
-                .addOnFailureListener(e -> Log.w("Firestore", "Error writing document", e));
-
-
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("Firestore", "Experiment successfully written!");
+                    Toast.makeText(CreateExperiment.this, "Experiment Submitted Successfully", Toast.LENGTH_SHORT).show();
+//                    scheduleNotificationWorker(title, goal, schedule);
+                    if (isRunning) {
+                        scheduleNotificationWorker(title, goal, schedule);
+                    } else {
+                        cancelNotificationWorker();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Error writing document", e);
+                    Toast.makeText(CreateExperiment.this, "Failed to submit experiment", Toast.LENGTH_SHORT).show();
+                });
 
     }
+
+    private void scheduleDailyNotifications(Data data, String workName, int hour, int minute) {
+        Calendar now = Calendar.getInstance();
+        Calendar notificationTime = Calendar.getInstance();
+        notificationTime.set(Calendar.HOUR_OF_DAY, hour);
+        notificationTime.set(Calendar.MINUTE, minute);
+        notificationTime.set(Calendar.SECOND, 0);
+
+        long initialDelay = notificationTime.getTimeInMillis() - now.getTimeInMillis();
+        if (initialDelay < 0) {
+            initialDelay += TimeUnit.DAYS.toMillis(1); // Schedule for the next day if the time has already passed today
+        }
+
+
+        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(NotificationWorker.class, 1, TimeUnit.DAYS)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .setInputData(data)
+                .addTag(workName)
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.UPDATE, workRequest);
+    }
+
+    private void scheduleWeeklyNotifications(Data data, String workName, int hour, int minute) {
+        Calendar now = Calendar.getInstance();
+        Calendar notificationTime = Calendar.getInstance();
+        notificationTime.set(Calendar.HOUR_OF_DAY, hour);
+        notificationTime.set(Calendar.MINUTE, minute);
+        notificationTime.set(Calendar.SECOND, 0);
+
+        long initialDelay = notificationTime.getTimeInMillis() - now.getTimeInMillis();
+        if (initialDelay < 0) {
+            initialDelay += TimeUnit.DAYS.toMillis(7); // Schedule for the next week if the time has already passed today
+        }
+
+        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(NotificationWorker.class, 7, TimeUnit.DAYS)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .setInputData(data)
+                .addTag(workName)
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.REPLACE, workRequest);
+    }
+
+    private void scheduleEvery2DaysNotifications(Data data, String workName, int hour, int minute) {
+        Calendar now = Calendar.getInstance();
+        Calendar notificationTime = Calendar.getInstance();
+        notificationTime.set(Calendar.HOUR_OF_DAY, hour);
+        notificationTime.set(Calendar.MINUTE, minute);
+        notificationTime.set(Calendar.SECOND, 0);
+
+        long initialDelay = notificationTime.getTimeInMillis() - now.getTimeInMillis();
+        if (initialDelay < 0) {
+            initialDelay += TimeUnit.DAYS.toMillis(2); // Schedule for the next 2 days if the time has already passed today
+        }
+
+        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(NotificationWorker.class, 2, TimeUnit.DAYS)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .setInputData(data)
+                .addTag(workName)
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.REPLACE, workRequest);
+    }
+    private long calculateRepeatInterval(String schedule) {
+        switch (schedule.toLowerCase()) {
+            case "daily":
+                return TimeUnit.DAYS.toMillis(1);
+            case "weekly":
+                return TimeUnit.DAYS.toMillis(7);
+            case "every 2 days":
+                return TimeUnit.DAYS.toMillis(2);
+            case "monthly":
+                return TimeUnit.DAYS.toMillis(30);
+            default:
+                // Default to daily
+                return TimeUnit.DAYS.toMillis(1);
+        }
+    }
+
 
 
     private void fetchLastExperiment() {
@@ -165,8 +336,6 @@ public class CreateExperiment extends AppCompatActivity {
                         String schedule = lastExperiment.getString("schedule");
                         Boolean isRunning = lastExperiment.getBoolean("isRunning");
 
-                        // Log for debugging
-                        Log.d("Firestore", "Last experiment details: " + lastExperiment.getData());
 
                         // Example of setting values to UI elements (make sure this runs on the UI thread if it's not already)
                         runOnUiThread(() -> {
@@ -209,4 +378,6 @@ public class CreateExperiment extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
 }
