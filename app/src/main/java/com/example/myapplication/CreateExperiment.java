@@ -68,6 +68,7 @@ public class CreateExperiment extends AppCompatActivity {
     private String deviceId;
 
     String DeviceModel;
+    private View loadingScreen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +105,8 @@ public class CreateExperiment extends AppCompatActivity {
         stepsTakenInput = findViewById(R.id.steps_taken);
         scheduleSpinner = findViewById(R.id.schedule_spinner);
         runningSwitch = findViewById(R.id.running_switch);
+        loadingScreen = findViewById(R.id.loading_screen);
+
         fetchLastExperiment();
 
         // Button initialization and setOnClickListener
@@ -135,7 +138,16 @@ public class CreateExperiment extends AppCompatActivity {
 
     }
 
+    private void showLoadingScreen() {
+        loadingScreen.setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoadingScreen() {
+        loadingScreen.setVisibility(View.GONE);
+    }
+
     private void submitExperiment() {
+        showLoadingScreen();
         // Retrieving the text from EditText fields
         String title = experimentTitleInput.getText().toString();
         String goal = experimentGoalInput.getText().toString();
@@ -143,9 +155,9 @@ public class CreateExperiment extends AppCompatActivity {
         String schedule = scheduleSpinner.getSelectedItem().toString();
         boolean isRunning = runningSwitch.isChecked();
 
-        // Optional: Validate the inputs
         if(title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
             Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
+            hideLoadingScreen();
         } else {
             saveExperimentToFirestore(title, goal, steps, schedule, isRunning);
             Toast.makeText(CreateExperiment.this, "Experiment Submitted Successfully", Toast.LENGTH_SHORT).show();
@@ -182,6 +194,8 @@ public class CreateExperiment extends AppCompatActivity {
         } else if ("every 2 days".equalsIgnoreCase(schedule)) {
             scheduleEvery2DaysNotifications(data, "every2DaysMorningNotification", 8, 0); // Schedule morning notification every 2 days
             scheduleEvery2DaysNotifications(data, "every2DaysEveningNotification", 20, 0); // Schedule evening notification every 2 days
+        } else if ("monthly".equalsIgnoreCase(schedule)) {
+
         } else {
             // Default to daily
             scheduleDailyNotifications(data, "defaultMorningNotification", 8, 0); // Schedule morning notification at 8 AM
@@ -199,6 +213,7 @@ public class CreateExperiment extends AppCompatActivity {
         WorkManager.getInstance(this).cancelAllWorkByTag("every2DaysEveningNotification");
         WorkManager.getInstance(this).cancelAllWorkByTag("defaultMorningNotification");
         WorkManager.getInstance(this).cancelAllWorkByTag("defaultEveningNotification");
+        WorkManager.getInstance(this).cancelAllWork();
     }
 
     private void saveExperimentToFirestore(String title, String goal, String steps, String schedule, boolean isRunning) {
@@ -215,7 +230,7 @@ public class CreateExperiment extends AppCompatActivity {
         experiment.put("steps", steps);
         experiment.put("schedule", schedule);
         experiment.put("isRunning", isRunning);
-        experiment.put("createdAt", FieldValue.serverTimestamp());
+        experiment.put("createdAt", epochSeconds);
 
         db.collection("Devices").document(deviceIdConcat)
                 .collection("experiments").document(documentId)
@@ -223,16 +238,17 @@ public class CreateExperiment extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     Log.d("Firestore", "Experiment successfully written!");
                     Toast.makeText(CreateExperiment.this, "Experiment Submitted Successfully", Toast.LENGTH_SHORT).show();
-//                    scheduleNotificationWorker(title, goal, schedule);
                     if (isRunning) {
                         scheduleNotificationWorker(title, goal, schedule);
                     } else {
                         cancelNotificationWorker();
                     }
+                    hideLoadingScreen();
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error writing document", e);
                     Toast.makeText(CreateExperiment.this, "Failed to submit experiment", Toast.LENGTH_SHORT).show();
+                    hideLoadingScreen();
                 });
 
     }
@@ -256,7 +272,7 @@ public class CreateExperiment extends AppCompatActivity {
                 .addTag(workName)
                 .build();
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.UPDATE, workRequest);
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest);
     }
 
     private void scheduleWeeklyNotifications(Data data, String workName, int hour, int minute) {
@@ -277,7 +293,7 @@ public class CreateExperiment extends AppCompatActivity {
                 .addTag(workName)
                 .build();
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.REPLACE, workRequest);
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest);
     }
 
     private void scheduleEvery2DaysNotifications(Data data, String workName, int hour, int minute) {
@@ -298,7 +314,28 @@ public class CreateExperiment extends AppCompatActivity {
                 .addTag(workName)
                 .build();
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.REPLACE, workRequest);
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest);
+    }
+
+    private void scheduleMonthlyNotifications(Data data, String workName, int hour, int minute) {
+        Calendar now = Calendar.getInstance();
+        Calendar notificationTime = Calendar.getInstance();
+        notificationTime.set(Calendar.HOUR_OF_DAY, hour);
+        notificationTime.set(Calendar.MINUTE, minute);
+        notificationTime.set(Calendar.SECOND, 0);
+
+        long initialDelay = notificationTime.getTimeInMillis() - now.getTimeInMillis();
+        if (initialDelay < 0) {
+            initialDelay += TimeUnit.DAYS.toMillis(30); // Schedule for the next week if the time has already passed today
+        }
+
+        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(NotificationWorker.class, 30, TimeUnit.DAYS)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .setInputData(data)
+                .addTag(workName)
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(workName, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest);
     }
     private long calculateRepeatInterval(String schedule) {
         switch (schedule.toLowerCase()) {
@@ -319,6 +356,8 @@ public class CreateExperiment extends AppCompatActivity {
 
 
     private void fetchLastExperiment() {
+        showLoadingScreen();
+
         String deviceIdConcat = deviceId + "-" + DeviceModel;
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -353,9 +392,11 @@ public class CreateExperiment extends AppCompatActivity {
                     } else {
                         Log.d("Firestore", "No experiments found or failed to fetch the data.");
                     }
+                    hideLoadingScreen();
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error fetching document", e);
+                    hideLoadingScreen();
                 });
     }
 

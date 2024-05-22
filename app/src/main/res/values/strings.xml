@@ -21,12 +21,12 @@
     <string name="steps_taken">Steps Taken</string>
     <string name="schedule">Schedule</string>
     <string name="running">Running?</string>
+    <string name="submit">Submit</string>
 
     <string-array name="schedule_options">
         <item>Daily</item>
         <item>Every 2 Days</item>
         <item>Weekly</item>
-        <item>Every 2 Weeks</item>
         <item>Monthly</item>
     </string-array>
 </resources>
