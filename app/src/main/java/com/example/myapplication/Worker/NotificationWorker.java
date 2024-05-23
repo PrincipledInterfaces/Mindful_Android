@@ -36,7 +36,7 @@ public class NotificationWorker extends Worker {
         String channelId = "experiment_channel";
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channelId, "Experiment Notifications", NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel channel = new NotificationChannel(channelId, "Experiment Notifications", NotificationManager.IMPORTANCE_HIGH);
             notificationManager.createNotificationChannel(channel);
         }
 
