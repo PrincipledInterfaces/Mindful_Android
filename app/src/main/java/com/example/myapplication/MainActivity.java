@@ -256,22 +256,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void updateUptime(long hours, long minutes, long seconds) {
-//        databaseReference.child("devices").child(deviceId).child("uptime").child("hours").setValue(hours);
-//        databaseReference.child("devices").child(deviceId).child("uptime").child("minutes").setValue(minutes);
-//        databaseReference.child("devices").child(deviceId).child("uptime").child("seconds").setValue(seconds);
-
-        Map<String, Object> uptime = new HashMap<>();
-//        uptime.put("Date", today.toString());
-        uptime.put("hours", hours);
-        uptime.put("minutes", minutes);
-        uptime.put("seconds", seconds);
-        FireStoreDB.collection("Devices").document(deviceId).collection(today.toString())
-                .document(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .set(uptime);
-
-    }
-
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
     private void fetchAppUsageStats() {
 //        List<UsageStatsModel> appUsageInfoList = new ArrayList<>();
