@@ -1030,8 +1030,8 @@ public class CreateExperiment extends AppCompatActivity {
             notificationTime.set(Calendar.HOUR_OF_DAY, 8); // 8 AM
             notificationTime.set(Calendar.MINUTE, 0);
         } else if ("Evening".equalsIgnoreCase(time)) {
-            notificationTime.set(Calendar.HOUR_OF_DAY, 11); // 8 PM
-            notificationTime.set(Calendar.MINUTE, 46);
+            notificationTime.set(Calendar.HOUR_OF_DAY, 20); // 8 PM
+            notificationTime.set(Calendar.MINUTE, 0);
         }
 
         long initialDelay = notificationTime.getTimeInMillis() - now.getTimeInMillis();
