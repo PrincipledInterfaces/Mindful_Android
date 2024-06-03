@@ -7,6 +7,7 @@ import android.os.Build;
 import android.util.Log;
 import android.widget.RemoteViews;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import androidx.core.text.HtmlCompat;
@@ -50,15 +51,24 @@ public class NotificationWorker extends Worker {
             notificationManager.createNotificationChannel(channel);
         }
 
+        title = "Experiment: " + title;
         CharSequence formattedMessage = HtmlCompat.fromHtml(message, HtmlCompat.FROM_HTML_MODE_LEGACY);
         CharSequence formattedTitle = HtmlCompat.fromHtml(title, HtmlCompat.FROM_HTML_MODE_LEGACY);
 
+        // Create the custom notification layout
+
+        RemoteViews contentView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.custom_notification);
+        contentView.setTextViewText(R.id.title, formattedTitle);
+        contentView.setTextViewText(R.id.text, formattedMessage);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), channelId)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(formattedTitle)
-                .setContentText(formattedMessage)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(formattedMessage))
+                .setCustomContentView(contentView)
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
                 .setAutoCancel(true);
+
+
+//        Log.e("testnotification", formattedMessage.toString());
 
         notificationManager.notify(1, builder.build());
     }
