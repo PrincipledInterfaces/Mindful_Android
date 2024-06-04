@@ -134,30 +134,97 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <LinearLayout
+                    android:id="@+id/schedule_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:padding="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textInputLayoutSteps">
 
-            <TextView
-            android:id="@+id/schedule_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:text="@string/schedule"
-            android:textSize="18sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textInputLayoutSteps" />
+                    <TextView
+                        android:id="@+id/schedule_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/schedule"
+                        android:textSize="18sp"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:layout_marginEnd="4dp"
+                        android:padding="4dp" />
+
+                    <ImageView
+                        android:id="@+id/schedule_help"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_help"
+                        android:contentDescription="@string/help_txt"
+                        android:tooltipText="This field is for scheduling purposes. Please enter the appropriate schedule."
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+
+
+
+            <Spinner
+                android:id="@+id/schedule_spinner"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
+                android:entries="@array/schedule_options"
+                android:background="@drawable/spinner_background"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/schedule_container" />
+
+                <LinearLayout
+                    android:id="@+id/duration_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:padding="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/schedule_spinner">
+
+                    <TextView
+                        android:id="@+id/duration_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/duration"
+                        android:textSize="18sp"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:layout_marginEnd="4dp"
+                        android:padding="4dp" />
+
+                    <ImageView
+                        android:id="@+id/duration_help"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_help"
+                        android:contentDescription="@string/help_txt"
+                        android:tooltipText="This field is for scheduling purposes. Please enter the appropriate schedule."
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
 
         <Spinner
-            android:id="@+id/schedule_spinner"
+            android:id="@+id/duration_spinner"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="16dp"
-            android:entries="@array/schedule_options"
+            android:entries="@array/duration_options"
             android:background="@drawable/spinner_background"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/schedule_label" />
+            app:layout_constraintTop_toBottomOf="@id/duration_container" />
 
         <RelativeLayout
             android:id="@+id/running_container"
@@ -169,7 +236,7 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/schedule_spinner">
+            app:layout_constraintTop_toBottomOf="@id/duration_spinner">
 
             <TextView
                 android:id="@+id/running_label"

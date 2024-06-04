@@ -10,11 +10,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
@@ -58,6 +60,7 @@ public class CreateExperiment extends AppCompatActivity {
     private EditText stepsTakenInput;
 
     private Spinner scheduleSpinner;
+    private Spinner durationSpinner;
     private SwitchMaterial runningSwitch;
 
     private String deviceId;
@@ -101,8 +104,13 @@ public class CreateExperiment extends AppCompatActivity {
         experimentGoalInput = findViewById(R.id.experiment_goal);
         stepsTakenInput = findViewById(R.id.steps_taken);
         scheduleSpinner = findViewById(R.id.schedule_spinner);
+        durationSpinner = findViewById(R.id.duration_spinner);
         runningSwitch = findViewById(R.id.running_switch);
         loadingScreen = findViewById(R.id.loading_screen);
+
+        setDefaultScheduleValue();
+        setDefaultDurationValue();
+        setHelpDialog();
 
         fetchLastExperiment();
 
@@ -113,6 +121,50 @@ public class CreateExperiment extends AppCompatActivity {
                 submitExperiment();
             }
         });
+
+
+    }
+
+    private void setHelpDialog() {
+        findViewById(R.id.schedule_help).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new AlertDialog.Builder(CreateExperiment.this)
+                        .setTitle("Help with Scheduling")
+                        .setMessage("You'll spend your chosen number of days in each condition. It's crucial to have 'normal' phone use to compare against your usage during the test to see any effects. We'll notify you the evening before and the morning after you need to switch your intervention on or off to keep you on track!")
+                        .setPositiveButton(R.string.modal_btn_text, null)
+                        .show();
+            }
+        });
+
+        findViewById(R.id.duration_help).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new AlertDialog.Builder(CreateExperiment.this)
+                        .setTitle("Help with Duration")
+                        .setMessage("Your test will run for the number of weeks you select. It's crucial to run the test long enough to capture your phone habits both with and without the intervention across all days of the week. This ensures we account for variations in phone usage by day (e.g., Monday, Tuesday). Running the test for several weeks helps us determine that any changes in your phone usage are due to the intervention and not other factors.")
+                        .setPositiveButton(R.string.modal_btn_text, null)
+                        .show();
+            }
+        });
+    }
+
+    private void setDefaultScheduleValue() {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.schedule_options, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        scheduleSpinner.setAdapter(adapter);
+
+        scheduleSpinner.setSelection(1);
+    }
+
+    private void setDefaultDurationValue() {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.duration_options, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        durationSpinner.setAdapter(adapter);
+
+        durationSpinner.setSelection(1);
     }
 
     private void showLoadingScreen() {
@@ -130,17 +182,18 @@ public class CreateExperiment extends AppCompatActivity {
         String goal = experimentGoalInput.getText().toString();
         String steps = stepsTakenInput.getText().toString();
         String schedule = scheduleSpinner.getSelectedItem().toString();
+        String duration = durationSpinner.getSelectedItem().toString();
         boolean isRunning = runningSwitch.isChecked();
 
         if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
             Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
             hideLoadingScreen();
         } else {
-            saveExperimentToFirestore(title, goal, steps, schedule, isRunning);
+            saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning);
         }
     }
 
-    private void saveExperimentToFirestore(String title, String goal, String steps, String schedule, boolean isRunning) {
+    private void saveExperimentToFirestore(String title, String goal, String steps, String schedule,String duration , boolean isRunning) {
         String deviceIdConcat = deviceId + "-" + DeviceModel;
 
         Instant nowUtc = Instant.now();
@@ -156,6 +209,7 @@ public class CreateExperiment extends AppCompatActivity {
         experiment.put("goal", goal);
         experiment.put("steps", steps);
         experiment.put("schedule", schedule);
+        experiment.put("duration", duration);
         experiment.put("isRunning", isRunning);
         experiment.put("createdAt", epochSeconds);
 
@@ -165,10 +219,21 @@ public class CreateExperiment extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     cancelNotificationWorker();
                     Log.d("Firestore", "Experiment successfully written!");
-                    Toast.makeText(CreateExperiment.this, "Experiment Submitted Successfully", Toast.LENGTH_SHORT).show();
                     if (isRunning) {
-//                        scheduleNotificationWorker(title, schedule);
-                        initializeExperimentDays(deviceIdConcat, documentId, currentDateUTC, schedule, title);
+                        initializeExperimentDays(deviceIdConcat, documentId, currentDateUTC, schedule, duration, title);
+                        new AlertDialog.Builder(CreateExperiment.this)
+                                .setTitle("Experiment Submitted Successfully")
+                                .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.\n" +
+                                        "\n" +
+                                        "If you're ever unsure, you can log into the app to check whether today is a control or intervention day. To end the experiment and stop receiving notifications, simply log into the app and click the cancel button.\n\nGood luck!")
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show();
+                    } else {
+                        new AlertDialog.Builder(CreateExperiment.this)
+                                .setTitle("Experiment Submitted Successfully")
+                                .setMessage("Your experiment has been saved, but it is not currently running. To start the experiment, toggle the switch to 'ON' and click the submit button again.\n\nGood luck!")
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show();
                     }
                     hideLoadingScreen();
 
@@ -181,24 +246,24 @@ public class CreateExperiment extends AppCompatActivity {
                 });
     }
 
-    private void initializeExperimentDays(String deviceIdConcat, String documentId, LocalDate startDate, String schedule, String title) {
+    private void initializeExperimentDays(String deviceIdConcat, String documentId, LocalDate startDate, String schedule, String duration, String title) {
         // Add the initial partial day (not counted as full day)
 //        saveExperimentDay(deviceIdConcat, documentId, startDate.minusDays(1), "partial_control");
 
         // Determine the schedule and set up the days accordingly
         if ("Daily".equals(schedule)) {
-            setupDailySchedule(deviceIdConcat, documentId, startDate, title);
+            setupDailySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
         } else if ("Every 2 Days".equals(schedule)) {
-            setupEvery2DaysSchedule(deviceIdConcat, documentId, startDate, title);
+            setupEvery2DaysSchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
         } else if ("Weekly".equals(schedule)) {
-            setupWeeklySchedule(deviceIdConcat, documentId, startDate, title);
+            setupWeeklySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
         } else {
-            setupDailySchedule(deviceIdConcat, documentId, startDate, title);
+            setupDailySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
         }
     }
 
-    private void setupDailySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title) {
-        for (int i = 1; i <= 30; i++) {
+    private void setupDailySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration) {
+        for (int i = 1; i <= duration; i++) {
             LocalDate currentDate = startDate.plusDays(i - 1);
             if (i % 2 == 1) { // Control days
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "control");
@@ -214,8 +279,8 @@ public class CreateExperiment extends AppCompatActivity {
         }
     }
 
-    private void setupEvery2DaysSchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title) {
-        for (int i = 1; i <= 30; i++)  {
+    private void setupEvery2DaysSchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration) {
+        for (int i = 1; i <= duration; i++)  {
             LocalDate currentDate = startDate.plusDays(i - 1);
             if (i % 4 == 1 || i % 4 == 2) { // Control days
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "control");
@@ -234,8 +299,8 @@ public class CreateExperiment extends AppCompatActivity {
         }
     }
 
-    private void setupWeeklySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title) {
-        for (int i = 1; i <= 30; i++) {
+    private void setupWeeklySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration) {
+        for (int i = 1; i <= duration; i++) {
             LocalDate currentDate = startDate.plusDays(i - 1);
 
             if ((i - 1) / 7 % 2 == 0) { // Control week
@@ -355,6 +420,7 @@ public class CreateExperiment extends AppCompatActivity {
                         String goal = lastExperiment.getString("goal");
                         String steps = lastExperiment.getString("steps");
                         String schedule = lastExperiment.getString("schedule");
+                        String duration = lastExperiment.getString("duration");
                         Boolean isRunning = lastExperiment.getBoolean("isRunning");
 
                         // Example of setting values to UI elements (make sure this runs on the UI thread if it's not already)
@@ -362,10 +428,14 @@ public class CreateExperiment extends AppCompatActivity {
                             ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) scheduleSpinner.getAdapter();
                             int position = adapter.getPosition(schedule); // Get the position of the item in the adapter
 
+                            ArrayAdapter<CharSequence> adapter2 = (ArrayAdapter<CharSequence>) durationSpinner.getAdapter();
+                            int durPosition = adapter2.getPosition(duration); // Get the position of the item in the adapter
+
                             experimentTitleInput.setText(title);
                             experimentGoalInput.setText(goal);
                             stepsTakenInput.setText(steps);
                             scheduleSpinner.setSelection(position);
+                            durationSpinner.setSelection(durPosition);
                             runningSwitch.setChecked(isRunning != null && isRunning);
                         });
 
@@ -392,6 +462,21 @@ public class CreateExperiment extends AppCompatActivity {
                 return 30;
             default:
                 return 1; // Default to daily if the schedule is not recognized
+        }
+    }
+
+    private int getIntervalFromDuration(String duration) {
+        switch (duration) {
+            case "2 Weeks":
+                return 14;
+            case "4 Weeks":
+                return 28;
+            case "6 Weeks":
+                return 42;
+            case "8 Weeks":
+                return 56;
+            default:
+                return 28; // Default to 4 weeks if the duration is not recognized
         }
     }
 
