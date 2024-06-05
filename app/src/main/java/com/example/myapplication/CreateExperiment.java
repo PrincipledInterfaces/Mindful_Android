@@ -228,7 +228,6 @@ public class CreateExperiment extends AppCompatActivity {
                     } else {
                         showSuccessDialog(false);
                     }
-                    setResult(RESULT_OK);
                     hideLoadingScreen();
 
                 })
@@ -241,19 +240,28 @@ public class CreateExperiment extends AppCompatActivity {
     }
 
     private void showSuccessDialog(boolean isRunning) {
+
+        AlertDialog dialog;
         if (isRunning) {
-            new AlertDialog.Builder(CreateExperiment.this)
+            dialog = new AlertDialog.Builder(CreateExperiment.this)
                     .setTitle("Experiment Submitted Successfully")
                     .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.\n\nIf you're ever unsure, you can log into the app to check whether today is a control or intervention day. To end the experiment and stop receiving notifications, simply log into the app and click the cancel button.\n\nGood luck!")
                     .setPositiveButton(android.R.string.ok, null)
-                    .show();
+                    .create();
+
         } else {
-            new AlertDialog.Builder(CreateExperiment.this)
+            dialog = new AlertDialog.Builder(CreateExperiment.this)
                     .setTitle("Experiment Submitted Successfully")
                     .setMessage("Your experiment has been saved, but it is not currently running. To start the experiment, toggle the switch to 'ON' and click the submit button again.\n\nGood luck!")
                     .setPositiveButton(android.R.string.ok, null)
-                    .show();
+                    .create();
         }
+
+        dialog.setOnDismissListener(dialogInterface -> {
+            setResult(RESULT_OK);
+        });
+
+        dialog.show();
         hideLoadingScreen();
     }
 

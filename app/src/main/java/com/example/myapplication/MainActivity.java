@@ -66,8 +66,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.time.LocalDate;
@@ -182,6 +184,12 @@ public class MainActivity extends Activity {
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateRunningExperimentDetails();
+    }
+
     private void initializeComponents() {
         FireStoreDB = FirebaseFirestore.getInstance();
         deviceIdConcat = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
@@ -201,21 +209,41 @@ public class MainActivity extends Activity {
                         String goal = runningExperiment.getString("goal");
                         String schedule = runningExperiment.getString("schedule");
                         String duration = runningExperiment.getString("duration");
+                        Long createdAt = runningExperiment.getLong("createdAt");
 
-                        String experimentDetails = "<b>Active Experiment:</b><br>" +
-                                "<b>Title:</b> " + title + "<br>" +
-                                "<b>Goal:</b> " + goal + "<br>" +
-                                "<b>Schedule:</b> " + schedule + "<br>" +
-                                "<b>Duration:</b> " + duration;
-                        runningExperimentDetailsTextView.setText(Html.fromHtml(experimentDetails));
+                        // Calculate the current day of the experiment
+                        LocalDate startDate = Instant.ofEpochSecond(createdAt).atZone(ZoneOffset.UTC).toLocalDate();
+                        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+                        long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
+
+                        // Determine if today is an intervention or control day based on the schedule
+                        boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
+
+                        String dayStatus = isInterventionDay ? "an <font color='#00FF00'><b>INTERVENTION DAY</b></font>" : "a <font color='#FF0000'><b>CONTROL DAY</b></font>";
+                        String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; today is " + dayStatus + ", be sure to use your intervention.";
+
+                        runningExperimentDetailsTextView.setText(Html.fromHtml(message));
                     } else {
-                        runningExperimentDetailsTextView.setText("No running experiment");
+                        runningExperimentDetailsTextView.setText("No Experiment Running!");
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error fetching running experiment", e);
                     runningExperimentDetailsTextView.setText("Failed to load running experiment details");
                 });
+    }
+
+    private boolean isInterventionDay(String schedule, long day) {
+        switch (schedule) {
+            case "Daily":
+                return day % 2 == 0;
+            case "Every 2 Days":
+                return day % 4 == 3 || day % 4 == 0;
+            case "Weekly":
+                return (day / 7) % 2 != 0;
+            default:
+                return false; // Default to control day if schedule is not recognized
+        }
     }
 
     public void fetchAndDisplayEvents(){
@@ -229,6 +257,7 @@ public class MainActivity extends Activity {
             // Optionally, display a user-friendly message using Toast or Snackbar
         }
     }
+
 
     public void updateSummary() {
         summaryTextView = findViewById(R.id.summaryTextView);
@@ -250,6 +279,7 @@ public class MainActivity extends Activity {
             return true;
         }
         else if (id == R.id.action_refresh) {
+            updateRunningExperimentDetails();
             fetchAndDisplayEvents();
             Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
             return true;
