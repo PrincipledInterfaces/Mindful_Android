@@ -219,8 +219,8 @@ public class MainActivity extends Activity {
                         // Determine if today is an intervention or control day based on the schedule
                         boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
 
-                        String dayStatus = isInterventionDay ? "an <font color='#00FF00'><b>INTERVENTION DAY</b></font>" : "a <font color='#FF0000'><b>CONTROL DAY</b></font>";
-                        String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; today is " + dayStatus + ", be sure to use your intervention.";
+                        String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b>, be sure to use your intervention.</font>" : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+                        String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
 
                         runningExperimentDetailsTextView.setText(Html.fromHtml(message));
                     } else {
