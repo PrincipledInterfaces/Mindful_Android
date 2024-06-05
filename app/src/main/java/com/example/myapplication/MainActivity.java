@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -57,6 +58,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -96,6 +98,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MainActivity extends Activity {
+    private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
     private TextView uptimeTextView;
     private static final int USAGE_STATS_PERMISSION_REQUEST_CODE = 1;
     private DatabaseReference databaseReference;
@@ -107,12 +110,14 @@ public class MainActivity extends Activity {
     FirebaseUser user;
     MaterialToolbar toolbar;
     TextView summaryTextView;
+    TextView runningExperimentDetailsTextView;
     private LocalDate today;
     private RecyclerView recyclerView;
     private UsageStatsAdapter adapter;
     private BroadcastReceiver updateUIReceiver;
     private ArrayList<UsageStatsModel> appUsageInfoList = new ArrayList<>();
     private Handler handler = new Handler();
+    private String deviceIdConcat;
 
     String jsonData;
     List<DeviceEvent> events;
@@ -126,12 +131,14 @@ public class MainActivity extends Activity {
         FirebaseApp.initializeApp(this);
         // Set your content view
         setContentView(R.layout.activity_main);
+
         auth = FirebaseAuth.getInstance();
-
         button = findViewById(R.id.new_experiment);
-
         textView = findViewById(R.id.user_details);
         user = auth.getCurrentUser();
+
+        initializeComponents();
+
         if (user == null) {
             Intent intent = new Intent(getApplicationContext(), Login.class);
             startActivity(intent);
@@ -158,12 +165,7 @@ public class MainActivity extends Activity {
                 }
 
                 updateSummary();
-
-//                jsonData = readJsonFromFile("DeviceEvent.json");
-//                events = parseDeviceEvents(jsonData);
-//
-//                displayEvents(events);
-
+                updateRunningExperimentDetails();
                 fetchAndDisplayEvents();
 
             }
@@ -173,10 +175,47 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 Toast.makeText(MainActivity.this, "Starting new Experiment", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(getApplicationContext(), CreateExperiment.class);
-                startActivity(intent);
+//                startActivity(intent);
+                startActivityForResult(intent, CREATE_EXPERIMENT_REQUEST_CODE);
             }
         });
 
+    }
+
+    private void initializeComponents() {
+        FireStoreDB = FirebaseFirestore.getInstance();
+        deviceIdConcat = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
+        runningExperimentDetailsTextView = findViewById(R.id.running_experiment_details);
+    }
+
+    private void updateRunningExperimentDetails() {
+        // Fetch the running experiment details from Firestore or any other source
+        FireStoreDB.collection("Devices").document(deviceIdConcat)
+                .collection("experiments")
+                .whereEqualTo("isRunning", true)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        DocumentSnapshot runningExperiment = task.getResult().getDocuments().get(0);
+                        String title = runningExperiment.getString("title");
+                        String goal = runningExperiment.getString("goal");
+                        String schedule = runningExperiment.getString("schedule");
+                        String duration = runningExperiment.getString("duration");
+
+                        String experimentDetails = "<b>Active Experiment:</b><br>" +
+                                "<b>Title:</b> " + title + "<br>" +
+                                "<b>Goal:</b> " + goal + "<br>" +
+                                "<b>Schedule:</b> " + schedule + "<br>" +
+                                "<b>Duration:</b> " + duration;
+                        runningExperimentDetailsTextView.setText(Html.fromHtml(experimentDetails));
+                    } else {
+                        runningExperimentDetailsTextView.setText("No running experiment");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Error fetching running experiment", e);
+                    runningExperimentDetailsTextView.setText("Failed to load running experiment details");
+                });
     }
 
     public void fetchAndDisplayEvents(){
@@ -253,6 +292,9 @@ public class MainActivity extends Activity {
             } else {
                 Toast.makeText(this, "Usage access permission not granted.", Toast.LENGTH_SHORT).show();
             }
+        }
+        if (requestCode == CREATE_EXPERIMENT_REQUEST_CODE && resultCode == RESULT_OK) {
+            updateRunningExperimentDetails();
         }
     }
 

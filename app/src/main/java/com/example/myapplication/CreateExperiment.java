@@ -177,20 +177,23 @@ public class CreateExperiment extends AppCompatActivity {
 
     private void submitExperiment() {
         showLoadingScreen();
-        // Retrieving the text from EditText fields
-        String title = experimentTitleInput.getText().toString();
-        String goal = experimentGoalInput.getText().toString();
-        String steps = stepsTakenInput.getText().toString();
-        String schedule = scheduleSpinner.getSelectedItem().toString();
-        String duration = durationSpinner.getSelectedItem().toString();
-        boolean isRunning = runningSwitch.isChecked();
 
-        if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
-            Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
-            hideLoadingScreen();
-        } else {
-            saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning);
-        }
+        fetchAndDisableLastExperiment(() -> {
+            // Retrieving the text from EditText fields
+            String title = experimentTitleInput.getText().toString();
+            String goal = experimentGoalInput.getText().toString();
+            String steps = stepsTakenInput.getText().toString();
+            String schedule = scheduleSpinner.getSelectedItem().toString();
+            String duration = durationSpinner.getSelectedItem().toString();
+            boolean isRunning = runningSwitch.isChecked();
+
+            if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
+                Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
+                hideLoadingScreen();
+            } else {
+                saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning);
+            }
+        });
     }
 
     private void saveExperimentToFirestore(String title, String goal, String steps, String schedule,String duration , boolean isRunning) {
@@ -221,20 +224,11 @@ public class CreateExperiment extends AppCompatActivity {
                     Log.d("Firestore", "Experiment successfully written!");
                     if (isRunning) {
                         initializeExperimentDays(deviceIdConcat, documentId, currentDateUTC, schedule, duration, title);
-                        new AlertDialog.Builder(CreateExperiment.this)
-                                .setTitle("Experiment Submitted Successfully")
-                                .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.\n" +
-                                        "\n" +
-                                        "If you're ever unsure, you can log into the app to check whether today is a control or intervention day. To end the experiment and stop receiving notifications, simply log into the app and click the cancel button.\n\nGood luck!")
-                                .setPositiveButton(android.R.string.ok, null)
-                                .show();
+                        showSuccessDialog(true);
                     } else {
-                        new AlertDialog.Builder(CreateExperiment.this)
-                                .setTitle("Experiment Submitted Successfully")
-                                .setMessage("Your experiment has been saved, but it is not currently running. To start the experiment, toggle the switch to 'ON' and click the submit button again.\n\nGood luck!")
-                                .setPositiveButton(android.R.string.ok, null)
-                                .show();
+                        showSuccessDialog(false);
                     }
+                    setResult(RESULT_OK);
                     hideLoadingScreen();
 
                 })
@@ -244,6 +238,23 @@ public class CreateExperiment extends AppCompatActivity {
                     cancelNotificationWorker();
                     hideLoadingScreen();
                 });
+    }
+
+    private void showSuccessDialog(boolean isRunning) {
+        if (isRunning) {
+            new AlertDialog.Builder(CreateExperiment.this)
+                    .setTitle("Experiment Submitted Successfully")
+                    .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.\n\nIf you're ever unsure, you can log into the app to check whether today is a control or intervention day. To end the experiment and stop receiving notifications, simply log into the app and click the cancel button.\n\nGood luck!")
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+        } else {
+            new AlertDialog.Builder(CreateExperiment.this)
+                    .setTitle("Experiment Submitted Successfully")
+                    .setMessage("Your experiment has been saved, but it is not currently running. To start the experiment, toggle the switch to 'ON' and click the submit button again.\n\nGood luck!")
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+        }
+        hideLoadingScreen();
     }
 
     private void initializeExperimentDays(String deviceIdConcat, String documentId, LocalDate startDate, String schedule, String duration, String title) {
@@ -450,21 +461,6 @@ public class CreateExperiment extends AppCompatActivity {
                 });
     }
 
-    private int getIntervalFromSchedule(String schedule) {
-        switch (schedule) {
-            case "Daily":
-                return 1;
-            case "Every 2 Days":
-                return 2;
-            case "Weekly":
-                return 7;
-            case "Monthly":
-                return 30;
-            default:
-                return 1; // Default to daily if the schedule is not recognized
-        }
-    }
-
     private int getIntervalFromDuration(String duration) {
         switch (duration) {
             case "2 Weeks":
@@ -478,6 +474,41 @@ public class CreateExperiment extends AppCompatActivity {
             default:
                 return 28; // Default to 4 weeks if the duration is not recognized
         }
+    }
+
+    private void fetchAndDisableLastExperiment(Runnable onComplete) {
+        String deviceIdConcat = deviceId + "-" + DeviceModel;
+
+        FireStoreDB.collection("Devices").document(deviceIdConcat)
+                .collection("experiments")
+                .orderBy(FieldPath.documentId(), Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        DocumentSnapshot lastExperiment = task.getResult().getDocuments().get(0);
+                        String lastExperimentId = lastExperiment.getId();
+                        Boolean isRunning = lastExperiment.getBoolean("isRunning");
+
+                        if (isRunning != null && isRunning) {
+                            FireStoreDB.collection("Devices").document(deviceIdConcat)
+                                    .collection("experiments").document(lastExperimentId)
+                                    .update("isRunning", false)
+                                    .addOnCompleteListener(updateTask -> {
+                                        if (updateTask.isSuccessful()) {
+                                            Log.d("Firestore", "Last experiment's running flag set to false.");
+                                        } else {
+                                            Log.e("Firestore", "Failed to update last experiment's running flag.");
+                                        }
+                                        onComplete.run();
+                                    });
+                        } else {
+                            onComplete.run();
+                        }
+                    } else {
+                        onComplete.run();
+                    }
+                });
     }
 
     @Override
