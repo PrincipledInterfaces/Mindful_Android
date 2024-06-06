@@ -67,6 +67,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -212,14 +213,19 @@ public class MainActivity extends Activity {
                         Long createdAt = runningExperiment.getLong("createdAt");
 
                         // Calculate the current day of the experiment
-                        LocalDate startDate = Instant.ofEpochSecond(createdAt).atZone(ZoneOffset.UTC).toLocalDate();
-                        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+//                        LocalDate startDate = Instant.ofEpochSecond(createdAt).atZone(ZoneOffset.UTC).toLocalDate();
+//                        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+//                        long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
+
+                        Instant createdAtInstant = Instant.ofEpochSecond(createdAt);
+                        LocalDate startDate = createdAtInstant.atZone(ZoneId.systemDefault()).toLocalDate();
+                        LocalDate today = LocalDate.now(ZoneId.systemDefault());
                         long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
 
                         // Determine if today is an intervention or control day based on the schedule
                         boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
 
-                        String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b>, be sure to use your intervention.</font>" : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+                        String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention." : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
                         String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
 
                         runningExperimentDetailsTextView.setText(Html.fromHtml(message));
