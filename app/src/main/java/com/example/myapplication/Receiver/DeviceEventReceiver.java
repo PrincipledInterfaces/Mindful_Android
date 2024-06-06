@@ -268,24 +268,81 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     }
 
 
+//    private Multimap<String, UsageStatsModel> fetchAppUsage(Context context, long unlockTime, long lockTime) {
+//        UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
+//        PackageManager packageManager = context.getPackageManager();
+//
+//        UsageEvents events = usm.queryEvents(unlockTime, lockTime);
+////        Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
+//        Multimap<String, UsageStatsModel> aggregatedUsage = ArrayListMultimap.create();
+//
+//        Map<String, Long> lastForegroundTime = new HashMap<>();
+//        int Order = 0;
+//
+//        while (events.hasNextEvent()) {
+//            UsageEvents.Event event = new UsageEvents.Event();
+//            events.getNextEvent(event);
+//
+//            String PN = event.getPackageName();
+//            // Skip "One UI Home"
+//            if (PN.equals("com.sec.android.app.launcher")) {
+//                continue;
+//            }
+//
+//            if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+//                lastForegroundTime.put(event.getPackageName(), Math.max(event.getTimeStamp(), unlockTime));
+//            } else if (event.getEventType() == UsageEvents.Event.MOVE_TO_BACKGROUND) {
+//                Long foregroundTime = lastForegroundTime.remove(event.getPackageName());
+//                if (foregroundTime != null) {
+//                    long timeBgd = Math.min(event.getTimeStamp(), lockTime);
+//                    long timeSpent = timeBgd - foregroundTime;
+//                    if (timeSpent > 0) {
+//                        String packageName = event.getPackageName();
+//                        String appName;
+//                        Order++;
+//                        try {
+//                            ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
+//                            appName = (String) packageManager.getApplicationLabel(applicationInfo);
+//                            if (packageName.contains("com.whatsapp.w4b")){
+//                                appName = "WhatsApp Business";
+//                            }
+//                        } catch (PackageManager.NameNotFoundException e) {
+//                            appName = packageName; // Fallback to package name if app name not found
+//                            continue; // Skip this package
+//                        }
+//
+////                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0, Order));
+//                            aggregatedUsage.put(packageName, new UsageStatsModel(appName, timeSpent, Order));
+//
+////                        Log.e("orderCheck", String.valueOf(appUsageInfo.getOrder()));
+////                        appUsageInfo.addUsageTime(timeSpent);
+////                        aggregatedUsage.put(packageName, appUsageInfo);
+//                    }
+//                }
+//            }
+//        }
+//
+//        return aggregatedUsage;
+//    }
+
     private Multimap<String, UsageStatsModel> fetchAppUsage(Context context, long unlockTime, long lockTime) {
         UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
         PackageManager packageManager = context.getPackageManager();
 
         UsageEvents events = usm.queryEvents(unlockTime, lockTime);
-//        Map<String, UsageStatsModel> aggregatedUsage = new HashMap<>();
         Multimap<String, UsageStatsModel> aggregatedUsage = ArrayListMultimap.create();
 
         Map<String, Long> lastForegroundTime = new HashMap<>();
-        int Order = 0;
+        String lastAppName = null;
+        int order = 0;
+        UsageStatsModel currentModel = null;
 
         while (events.hasNextEvent()) {
             UsageEvents.Event event = new UsageEvents.Event();
             events.getNextEvent(event);
 
-            String PN = event.getPackageName();
-            // Skip "One UI Home"
-            if (PN.equals("com.sec.android.app.launcher")) {
+            String packageName = event.getPackageName();
+            if (packageName.equals("com.sec.android.app.launcher")) {
                 continue;
             }
 
@@ -297,26 +354,30 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                     long timeBgd = Math.min(event.getTimeStamp(), lockTime);
                     long timeSpent = timeBgd - foregroundTime;
                     if (timeSpent > 0) {
-                        String packageName = event.getPackageName();
                         String appName;
-                        Order++;
                         try {
                             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
                             appName = (String) packageManager.getApplicationLabel(applicationInfo);
-                            if (packageName.contains("com.whatsapp.w4b")){
+                            if (packageName.contains("com.whatsapp.w4b")) {
                                 appName = "WhatsApp Business";
                             }
                         } catch (PackageManager.NameNotFoundException e) {
-                            appName = packageName; // Fallback to package name if app name not found
-                            continue; // Skip this package
+                            appName = packageName;
+                            continue;
                         }
 
-//                        UsageStatsModel appUsageInfo = aggregatedUsage.getOrDefault(packageName, new UsageStatsModel(appName, 0, Order));
-                            aggregatedUsage.put(packageName, new UsageStatsModel(appName, timeSpent, Order));
-
-//                        Log.e("orderCheck", String.valueOf(appUsageInfo.getOrder()));
-//                        appUsageInfo.addUsageTime(timeSpent);
-//                        aggregatedUsage.put(packageName, appUsageInfo);
+                        if (appName.equals(lastAppName)) {
+                            // Add usage time to the existing model
+                            if (currentModel != null) {
+                                currentModel.addUsageTime(timeSpent);
+                            }
+                        } else {
+                            // Create a new model for the different app
+                            order++;
+                            currentModel = new UsageStatsModel(appName, timeSpent, order);
+                            aggregatedUsage.put(packageName, currentModel);
+                            lastAppName = appName;
+                        }
                     }
                 }
             }
@@ -324,6 +385,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
         return aggregatedUsage;
     }
+
+
+
 
 
 
