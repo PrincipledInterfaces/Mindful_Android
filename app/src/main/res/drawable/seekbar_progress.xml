@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/seekbar_progress.xml -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="10dp" />
+            <solid android:color="#D3D3D3" /> <!-- Background color -->
+            <size android:height="16dp" /> <!-- Adjust height for thickness -->
+        </shape>
+    </item>
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape>
+                <corners android:radius="10dp" />
+                <solid android:color="#B3B3B3" /> <!-- Secondary progress color -->
+                <size android:height="16dp" /> <!-- Adjust height for thickness -->
+            </shape>
+        </clip>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <corners android:radius="10dp" />
+                <solid android:color="@color/colorPrimary" /> <!-- Progress color -->
+                <size android:height="16dp" /> <!-- Adjust height for thickness -->
+            </shape>
+        </clip>
+    </item>
+</layer-list>
+
+
