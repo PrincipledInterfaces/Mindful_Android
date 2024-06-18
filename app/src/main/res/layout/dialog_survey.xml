@@ -47,7 +47,7 @@
             android:id="@+id/likert_question"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="How willing are you to do this?"
+            android:text="How willing are you to do this? (1-5)"
             android:textSize="18sp"
             android:paddingTop="16dp"
             android:paddingBottom="8dp"/>

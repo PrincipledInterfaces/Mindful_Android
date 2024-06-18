@@ -27,6 +27,7 @@ import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +42,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.Adapter.DeviceEventAdapter;
 import com.example.myapplication.Adapter.MultiSelectAdapter;
 import com.example.myapplication.Model.DeviceEvent;
+import com.example.myapplication.Model.Survey.QuestionAnswer;
+import com.example.myapplication.Model.SurveyDetails;
 import com.example.myapplication.Model.UsageStatsModel;
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
@@ -48,6 +51,7 @@ import com.example.myapplication.Util.AuthenticationUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -222,6 +226,31 @@ public class MainActivity extends Activity {
         appSelection.setText(spannableBuilder);
     }
 
+    private void saveSurveyDetailsToFirestore(List<QuestionAnswer> qa, List<String> selectedApps) {
+
+        // Set up the date format to use UTC
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String formattedTimestamp = dateFormat.format(new Date());
+
+        long timestamp = System.currentTimeMillis() / 1000L;
+
+        SurveyDetails surveyDetails = new SurveyDetails(qa, selectedApps, timestamp);
+
+        String surveyId = "survey_" + formattedTimestamp;
+
+        FireStoreDB.collection("Devices").document(deviceIdConcat)
+                .collection("surveys").document(surveyId)
+                .set(surveyDetails)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(MainActivity.this, "Survey details saved successfully!", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Failed to save survey details.", Toast.LENGTH_SHORT).show();
+                    Log.e("Firestore", "Error saving survey details", e);
+                });
+    }
+
     private void showSurveyModal() {
         // Inflate the custom layout
         LayoutInflater inflater = getLayoutInflater();
@@ -237,9 +266,40 @@ public class MainActivity extends Activity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // Handle survey submission here
-                        EditText answer = surveyLayout.findViewById(R.id.answer1);
-                        String answerText = answer.getText().toString();
-                        // Save or process the answer
+
+                        TextView question1 = surveyLayout.findViewById(R.id.question1);
+                        TextView question2 = surveyLayout.findViewById(R.id.question2);
+                        TextView likertQuestion = surveyLayout.findViewById(R.id.likert_question);
+
+                        // Retrieve answer TextInputEditText elements
+                        TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
+                        TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
+
+                        SeekBar likertSeekBar = surveyLayout.findViewById(R.id.likert_seekbar);
+
+                        // Get the text from the views
+                        String question1Text = question1.getText().toString();
+                        String answer1Text = answer1.getText().toString();
+                        String question2Text = question2.getText().toString();
+                        String answer2Text = answer2.getText().toString();
+
+                        int seekBarValue = likertSeekBar.getProgress() + 1;
+
+                        // Create a list of QuestionAnswer objects
+                        List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
+                        questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
+                        questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
+                        questionsAndAnswers.add(new QuestionAnswer(likertQuestion.getText().toString(), String.valueOf(seekBarValue)));
+
+                        // Collect selected apps
+                        List<String> selectedApps = new ArrayList<>();
+                        for (int i = 0; i < appNames.length; i++) {
+                            if (selectedItems[i]) {
+                                selectedApps.add(appNames[i]);
+                            }
+                        }
+
+                        saveSurveyDetailsToFirestore(questionsAndAnswers, selectedApps);
 
                         // Mark survey as shown
                         SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
