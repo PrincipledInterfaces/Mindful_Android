@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/date_time_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+            <TextView
+                android:id="@+id/start_date_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Start Date/Time"
+                android:textSize="18sp"
+                android:padding="8dp"/>
+
+    <!-- Horizontal LinearLayout for Start Date and Time -->
+    <LinearLayout
+        android:id="@+id/start_date_time_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="24dp"
+        android:padding="8dp">
+
+        <EditText
+            android:id="@+id/start_date_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="MM/dd/yyyy"
+            android:inputType="date"
+            android:layout_weight="1.2"/>
+
+        <EditText
+            android:id="@+id/start_time_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="HH:mm"
+            android:inputType="time"
+            android:layout_weight="0.8"/>
+
+    </LinearLayout>
+
+    <!-- Horizontal LinearLayout for End Date and Time -->
+
+    <TextView
+        android:id="@+id/end_date_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="End Date/Time"
+        android:textSize="18sp"
+        android:layout_below="@id/start_date_time_layout"
+        android:padding="8dp"/>
+
+    <LinearLayout
+        android:id="@+id/end_date_time_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/end_date_label"
+        android:layout_marginTop="16dp"
+        android:padding="8dp">
+
+
+        <EditText
+            android:id="@+id/end_date_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="MM/dd/yyyy"
+            android:inputType="date"
+            android:layout_weight="1.2"/>
+
+
+        <EditText
+            android:id="@+id/end_time_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="HH:mm"
+            android:inputType="time"
+            android:layout_weight="0.8"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

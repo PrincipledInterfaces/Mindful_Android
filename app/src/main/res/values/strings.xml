@@ -16,5 +16,28 @@
     <string name="duration_text">Duration</string>
     <string name="what_is_experiment">What is Experiment</string>
     <string name="page_title_experiment_setup">Experiment Setup</string>
-    <string name="experiment_title">Experiment Title</string>
+    <string name="experiment_title">Title</string>
+    <string name="experiment_goal">Goal</string>
+    <string name="steps_taken">Steps Taken</string>
+    <string name="schedule">Schedule</string>
+    <string name="running">Running?</string>
+    <string name="submit">Submit</string>
+    <string name="notification_icon">Notification Icon Description</string>
+    <string name="duration">Duration</string>
+    <string name="modal_btn_text">Got it!</string>
+    <string name="help_txt">Help</string>
+    <string name="select_applications">Select Applications</string>
+
+    <string-array name="schedule_options">
+        <item>Daily</item>
+        <item>Every 2 Days</item>
+        <item>Weekly</item>
+    </string-array>
+    <string-array name="duration_options">
+        <item>2 Weeks</item>
+        <item>4 Weeks</item>
+        <item>6 Weeks</item>
+        <item>8 Weeks</item>
+    </string-array>
+
 </resources>

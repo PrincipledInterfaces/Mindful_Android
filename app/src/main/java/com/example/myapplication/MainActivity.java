@@ -2,213 +2,369 @@ package com.example.myapplication;
 
 import android.app.Activity;
 import android.app.AppOpsManager;
-import android.app.usage.UsageStats;
+import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.IntentFilter;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Typeface;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
-import android.provider.Settings;
-import android.util.Log;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.LinearLayout;
-import android.view.Gravity;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.os.Build;
-
-import android.view.Menu;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.text.Html;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.CheckedTextView;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.content.Context;
-import android.provider.Settings;
-
-import android.content.Intent;
-import android.widget.Toast;
-import androidx.appcompat.widget.Toolbar;
 
 import com.example.myapplication.Adapter.DeviceEventAdapter;
+import com.example.myapplication.Adapter.MultiSelectAdapter;
 import com.example.myapplication.Model.DeviceEvent;
-import com.example.myapplication.Util.AuthenticationUtils;
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.floatingactionbutton.*;
-
+import com.example.myapplication.Model.Survey.QuestionAnswer;
+import com.example.myapplication.Model.SurveyDetails;
+import com.example.myapplication.Model.UsageStatsModel;
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
-import com.example.myapplication.Worker.AppUsageWorker;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.example.myapplication.Util.AuthenticationUtils;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import com.example.myapplication.Adapter.UsageStatsAdapter;
-import com.example.myapplication.Model.UsageStatsModel;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.TimeZone;
+
 public class MainActivity extends Activity {
-    private TextView uptimeTextView;
+    private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
     private static final int USAGE_STATS_PERMISSION_REQUEST_CODE = 1;
-    private DatabaseReference databaseReference;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100;
+    private static final String PREFS_NAME = "MyPrefsFile";
+    private static final String SURVEY_SHOWN = "survey_shown";
+
+    private FirebaseAuth auth;
     private FirebaseFirestore FireStoreDB;
+    private FirebaseUser user;
+    private String deviceIdConcat;
+    private List<DeviceEvent> events;
+    private String jsonData;
 
-    FirebaseAuth auth;
-    FloatingActionButton button;
-    TextView textView;
-    FirebaseUser user;
-    MaterialToolbar toolbar;
-    TextView summaryTextView;
-    private LocalDate today;
+    private TextView textView;
+    private TextView summaryTextView;
+    private TextView runningExperimentDetailsTextView;
+    private TextView emptyMessageTextView;
     private RecyclerView recyclerView;
-    private UsageStatsAdapter adapter;
-    private BroadcastReceiver updateUIReceiver;
-    private ArrayList<UsageStatsModel> appUsageInfoList = new ArrayList<>();
-    private Handler handler = new Handler();
+    private FloatingActionButton button;
+    private boolean shouldShowSurvey = false;
+    private AlertDialog surveyDialog;
+    private TextView appSelection;
 
-    String jsonData;
-    List<DeviceEvent> events;
-
-    String deviceId; // Get the unique device ID
-
+    private String[] appNames;
+    private boolean[] selectedItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FirebaseApp.initializeApp(this);
-        // Set your content view
         setContentView(R.layout.activity_main);
+
         auth = FirebaseAuth.getInstance();
-
-        button = findViewById(R.id.new_experiment);
-
-        textView = findViewById(R.id.user_details);
         user = auth.getCurrentUser();
+
+        initializeComponents();
+
         if (user == null) {
-            Intent intent = new Intent(getApplicationContext(), Login.class);
-            startActivity(intent);
+            startActivity(new Intent(this, Login.class));
             finish();
         } else {
             textView.setText("Welcome, " + user.getEmail());
-            toolbar = findViewById(R.id.top_app_toolbar);
-            toolbar.setTitle("Dashboard");
-            toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
-                @Override
-                public boolean onMenuItemClick(MenuItem item) {
-                    return onOptionsItemSelected(item);
-                }
+            setupToolbar();
+            checkUsageStatsPermission();
+
+            SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
+
+            button.setOnClickListener(v -> {
+                Toast.makeText(MainActivity.this, "Starting new Experiment", Toast.LENGTH_LONG).show();
+                startActivityForResult(new Intent(this, CreateExperiment.class), CREATE_EXPERIMENT_REQUEST_CODE);
             });
-            // Check if usage stats permission is granted
-            if (!hasUsageStatsPermission()) {
-                requestUsageStatsPermission();
-            } else {
-                Intent serviceIntent = new Intent(this, DeviceEventService.class);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent);
-                } else {
-                    startService(serviceIntent);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestNotificationPermission();
                 }
-
-                updateSummary();
-
-                jsonData = readJsonFromFile("DeviceEvent.json");
-                events = parseDeviceEvents(jsonData);
-
-                displayEvents(events);
-
-
-//                fetchAppUsageStats();
             }
         }
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Starting new Experiment", Toast.LENGTH_LONG).show();
-                Intent intent = new Intent(getApplicationContext(), CreateExperiment.class);
-                startActivity(intent);
-            }
-        });
-
     }
 
-    public void updateSummary() {
-        summaryTextView = findViewById(R.id.summaryTextView);
-        LocalDate today = LocalDate.now();
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
-        String formattedDate = today.format(dateFormatter);
+//    private void populateAppSelection(View surveyLayout) {
+//        PackageManager pm = getPackageManager();
+//        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+//        List<String> appNameList = new ArrayList<>();
+//
+//        for (ApplicationInfo app : apps) {
+//            appNameList.add(pm.getApplicationLabel(app).toString());
+//        }
+//
+//        appNames = appNameList.toArray(new String[0]);
+//        selectedItems = new boolean[appNames.length];
+//
+//        appSelection = surveyLayout.findViewById(R.id.app_selection);
+//        appSelection.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                showMultiSelectDialog();
+//            }
+//        });
+//    }
 
-        // Set the text to include today's date and daily summary
-        String dailySummaryText = getResources().getString(R.string.daily_summary); // assuming you have this string in strings.xml
-        summaryTextView.setText(formattedDate + " - " + dailySummaryText);
+    private void populateAppSelection(View surveyLayout) {
+        PackageManager pm = getPackageManager();
+        Intent socialMediaIntent = new Intent(Intent.ACTION_SEND);
+        socialMediaIntent.setType("text/plain");
+
+        List<ResolveInfo> resolveInfoList = pm.queryIntentActivities(socialMediaIntent, PackageManager.MATCH_ALL);
+        List<String> appNameList = new ArrayList<>();
+
+        for (ResolveInfo resolveInfo : resolveInfoList) {
+            ApplicationInfo app = resolveInfo.activityInfo.applicationInfo;
+            String appName = pm.getApplicationLabel(app).toString();
+            if (!appNameList.contains(appName)) { // Avoid duplicates
+                appNameList.add(appName);
+            }
+        }
+
+        appNames = appNameList.toArray(new String[0]);
+        selectedItems = new boolean[appNames.length];
+
+        appSelection = surveyLayout.findViewById(R.id.app_selection);
+        appSelection.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showMultiSelectDialog();
+            }
+        });
+    }
+
+
+    private void showMultiSelectDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Select Apps")
+                .setMultiChoiceItems(appNames, selectedItems, new DialogInterface.OnMultiChoiceClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int indexSelected, boolean isChecked) {
+                        selectedItems[indexSelected] = isChecked;
+                    }
+                })
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        updateSelectedItemsText();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void updateSelectedItemsText() {
+        SpannableStringBuilder spannableBuilder = new SpannableStringBuilder();
+        for (int i = 0; i < appNames.length; i++) {
+            if (selectedItems[i]) {
+                SpannableString spannablePart = new SpannableString(appNames[i]);
+                spannablePart.setSpan(new ForegroundColorSpan(Color.BLUE), 0, appNames[i].length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (spannableBuilder.length() > 0) {
+                    spannableBuilder.append(", ");
+                }
+                spannableBuilder.append(spannablePart);
+            }
+        }
+        appSelection.setText(spannableBuilder);
+    }
+
+    private void saveSurveyDetailsToFirestore(List<QuestionAnswer> qa, List<String> selectedApps) {
+
+        // Set up the date format to use UTC
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String formattedTimestamp = dateFormat.format(new Date());
+
+        long timestamp = System.currentTimeMillis() / 1000L;
+
+        SurveyDetails surveyDetails = new SurveyDetails(qa, selectedApps, timestamp);
+
+        String surveyId = "survey_" + formattedTimestamp;
+
+        FireStoreDB.collection("Devices").document(deviceIdConcat)
+                .collection("surveys").document(surveyId)
+                .set(surveyDetails)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(MainActivity.this, "Survey details saved successfully!", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Failed to save survey details.", Toast.LENGTH_SHORT).show();
+                    Log.e("Firestore", "Error saving survey details", e);
+                });
+    }
+
+    private void showSurveyModal() {
+        // Inflate the custom layout
+        LayoutInflater inflater = getLayoutInflater();
+        View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
+
+        MaterialButton submitButton = surveyLayout.findViewById(R.id.submit_button);
+
+        // Populate the app selection
+        populateAppSelection(surveyLayout);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(surveyLayout)
+                .setTitle("Survey")
+                .create();
+        submitButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        // Handle survey submission here
+
+                        TextView question1 = surveyLayout.findViewById(R.id.question1);
+                        TextView question2 = surveyLayout.findViewById(R.id.question2);
+                        TextView likertQuestion = surveyLayout.findViewById(R.id.likert_question);
+
+                        // Retrieve answer TextInputEditText elements
+                        TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
+                        TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
+
+                        SeekBar likertSeekBar = surveyLayout.findViewById(R.id.likert_seekbar);
+
+                        // Get the text from the views
+                        String question1Text = question1.getText().toString();
+                        String answer1Text = answer1.getText().toString();
+                        String question2Text = question2.getText().toString();
+                        String answer2Text = answer2.getText().toString();
+
+                        int seekBarValue = likertSeekBar.getProgress() + 1;
+
+                        // Create a list of QuestionAnswer objects
+                        List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
+                        questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
+                        questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
+                        questionsAndAnswers.add(new QuestionAnswer(likertQuestion.getText().toString(), String.valueOf(seekBarValue)));
+
+                        // Collect selected apps
+                        List<String> selectedApps = new ArrayList<>();
+                        for (int i = 0; i < appNames.length; i++) {
+                            if (selectedItems[i]) {
+                                selectedApps.add(appNames[i]);
+                            }
+                        }
+
+                        saveSurveyDetailsToFirestore(questionsAndAnswers, selectedApps);
+
+                        // Mark survey as shown
+                        SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = settings.edit();
+                        editor.putBoolean(SURVEY_SHOWN, true);
+                        editor.apply();
+
+                        shouldShowSurvey = false; // Update the flag
+                    }
+                });
+
+        // Create and show the dialog
+        surveyDialog = builder.create();
+        surveyDialog.setCancelable(false);
+        surveyDialog.setCanceledOnTouchOutside(false);
+        surveyDialog.show();
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.menu_logout) {
-            AuthenticationUtils.logoutUser(this);
-            return true;
+    protected void onResume() {
+        super.onResume();
+        updateRunningExperimentDetails();
+        if (shouldShowSurvey && (surveyDialog == null || !surveyDialog.isShowing())) {
+            showSurveyModal();
         }
-        else if (id == R.id.action_refresh) {
-            jsonData = readJsonFromFile("DeviceEvent.json");
-            events = parseDeviceEvents(jsonData);
-
-            displayEvents(events);
-            Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (surveyDialog != null && surveyDialog.isShowing()) {
+            surveyDialog.dismiss();
+        }
+    }
+
+    private void initializeComponents() {
+        FireStoreDB = FirebaseFirestore.getInstance();
+        deviceIdConcat = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
+        runningExperimentDetailsTextView = findViewById(R.id.running_experiment_details);
+        summaryTextView = findViewById(R.id.summaryTextView);
+        textView = findViewById(R.id.user_details);
+        emptyMessageTextView = findViewById(R.id.empty_message);
+        button = findViewById(R.id.new_experiment);
+        recyclerView = findViewById(R.id.recyclerView);
+    }
+
+    private void setupToolbar() {
+        MaterialToolbar toolbar = findViewById(R.id.top_app_toolbar);
+        toolbar.setTitle("Dashboard");
+        toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
+    }
+
+    private void checkUsageStatsPermission() {
+        if (!hasUsageStatsPermission()) {
+            requestUsageStatsPermission();
+        } else {
+            startDeviceEventService();
+            updateSummary();
+            fetchAndDisplayEvents();
+        }
+    }
 
     private boolean hasUsageStatsPermission() {
         try {
@@ -223,8 +379,209 @@ public class MainActivity extends Activity {
     }
 
     private void requestUsageStatsPermission() {
-        Toast.makeText(this, "Please grant usage access permission.", Toast.LENGTH_LONG).show();
-        startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+        startActivityForResult(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS), USAGE_STATS_PERMISSION_REQUEST_CODE);
+    }
+
+    private void startDeviceEventService() {
+        Intent serviceIntent = new Intent(this, DeviceEventService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+    private void updateSummary() {
+        LocalDate today = LocalDate.now();
+        String formattedDate = today.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.getDefault()));
+        String dailySummaryText = getResources().getString(R.string.daily_summary);
+        summaryTextView.setText(String.format("%s - %s", formattedDate, dailySummaryText));
+    }
+
+    private void updateRunningExperimentDetails() {
+        FireStoreDB.collection("Devices").document(deviceIdConcat)
+                .collection("experiments")
+                .whereEqualTo("isRunning", true)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        DocumentSnapshot runningExperiment = task.getResult().getDocuments().get(0);
+                        displayExperimentDetails(runningExperiment);
+                    } else {
+                        runningExperimentDetailsTextView.setText("No Experiment Running!");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Error fetching running experiment", e);
+                    runningExperimentDetailsTextView.setText("Failed to load running experiment details");
+                });
+    }
+
+    private void displayExperimentDetails(DocumentSnapshot experiment) {
+        String title = experiment.getString("title");
+        String goal = experiment.getString("goal");
+        String schedule = experiment.getString("schedule");
+        String duration = experiment.getString("duration");
+        Long createdAt = experiment.getLong("createdAt");
+
+        if (createdAt != null) {
+            Instant createdAtInstant = Instant.ofEpochSecond(createdAt);
+            LocalDate startDate = createdAtInstant.atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate today = LocalDate.now(ZoneId.systemDefault());
+            long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
+            boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
+
+            String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention." : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+            String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
+
+            runningExperimentDetailsTextView.setText(Html.fromHtml(message));
+        } else {
+            runningExperimentDetailsTextView.setText("No Experiment Running!");
+        }
+    }
+
+    private boolean isInterventionDay(String schedule, long day) {
+        switch (schedule) {
+            case "Daily":
+                return day % 2 == 0;
+            case "Every 2 Days":
+                return day % 4 == 3 || day % 4 == 0;
+            case "Weekly":
+                return (day / 7) % 2 != 0;
+            default:
+                return false;
+        }
+    }
+
+    private void fetchAndDisplayEvents() {
+        try {
+            jsonData = readJsonFromFile("DeviceEvent.json");
+            events = parseDeviceEvents(jsonData);
+            if (events.isEmpty()) {
+                emptyMessageTextView.setVisibility(View.VISIBLE); // Show empty message
+                recyclerView.setVisibility(View.GONE); // Hide RecyclerView
+            } else {
+                emptyMessageTextView.setVisibility(View.GONE); // Hide empty message
+                recyclerView.setVisibility(View.VISIBLE); // Show RecyclerView
+                displayEvents(events); // Display events
+            }
+        } catch (Exception e) {
+            Log.e("Reading Json File", "An unexpected error occurred", e);
+            emptyMessageTextView.setVisibility(View.VISIBLE); // Show empty message on error
+            recyclerView.setVisibility(View.GONE); // Hide RecyclerView
+        }
+    }
+
+    private String readJsonFromFile(String filename) {
+        StringBuilder json = new StringBuilder();
+        try (InputStream inputStream = openFileInput(filename);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                json.append(line);
+            }
+        } catch (IOException e) {
+            Log.e("MainActivity", "Error reading JSON file", e);
+        }
+        return json.toString();
+    }
+
+    private List<DeviceEvent> parseDeviceEvents(String jsonData) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String todayDate = dateFormat.format(new Date());
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonData);
+            JSONArray todayEvents = jsonObject.getJSONArray(todayDate);
+            List<DeviceEvent> eventsList = new ArrayList<>();
+
+            for (int i = 0; i < todayEvents.length(); i++) {
+                JSONObject eventObj = todayEvents.getJSONObject(i);
+                String eventType = eventObj.getString("EventType");
+
+                DeviceEvent event = new DeviceEvent(eventType, eventObj.getLong("Time"), 0);
+                eventsList.add(event);
+
+                if (eventObj.has("AppUsage")) {
+                    JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
+                    for (int j = 0; j < appUsageArray.length(); j++) {
+                        JSONObject appUsageEvent = appUsageArray.getJSONObject(j);
+                        DeviceEvent appEvent = new DeviceEvent(appUsageEvent.getString("EventType"), appUsageEvent.getLong("Time"), appUsageEvent.getInt("Order"));
+                        eventsList.add(appEvent);
+                    }
+                }
+            }
+            return eventsList;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private void displayEvents(List<DeviceEvent> events) {
+        DeviceEventAdapter adapter = new DeviceEventAdapter(this, events);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menu_logout) {
+            AuthenticationUtils.logoutUser(this);
+            return true;
+        } else if (item.getItemId() == R.id.action_refresh) {
+            updateRunningExperimentDetails();
+            fetchAndDisplayEvents();
+            Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    private void requestNotificationPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.POST_NOTIFICATIONS)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Notification Permission Needed")
+                    .setMessage("This app needs the Notification permission to send you notifications.")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+                        }
+                    })
+                    .create()
+                    .show();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Notification Permission Granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Notification Permission Denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == USAGE_STATS_PERMISSION_REQUEST_CODE) {
+            if (hasUsageStatsPermission()) {
+                startAppUsageService();
+            } else {
+                Toast.makeText(this, "Usage access permission not granted.", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == CREATE_EXPERIMENT_REQUEST_CODE && resultCode == RESULT_OK) {
+            updateRunningExperimentDetails();
+        }
     }
 
     private void startAppUsageService() {
@@ -233,173 +590,7 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == USAGE_STATS_PERMISSION_REQUEST_CODE) {
-            // Check again if usage stats permission is granted after returning from settings screen
-            if (hasUsageStatsPermission()) {
-                // Permission granted, start the service
-                startAppUsageService();
-            } else {
-                Toast.makeText(this, "Usage access permission not granted.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    public void updateUptime(long hours, long minutes, long seconds) {
-//        databaseReference.child("devices").child(deviceId).child("uptime").child("hours").setValue(hours);
-//        databaseReference.child("devices").child(deviceId).child("uptime").child("minutes").setValue(minutes);
-//        databaseReference.child("devices").child(deviceId).child("uptime").child("seconds").setValue(seconds);
-
-        Map<String, Object> uptime = new HashMap<>();
-//        uptime.put("Date", today.toString());
-        uptime.put("hours", hours);
-        uptime.put("minutes", minutes);
-        uptime.put("seconds", seconds);
-        FireStoreDB.collection("Devices").document(deviceId).collection(today.toString())
-                .document(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")))
-                .set(uptime);
-
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
-    private void fetchAppUsageStats() {
-//        List<UsageStatsModel> appUsageInfoList = new ArrayList<>();
-        UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
-        PackageManager packageManager = getPackageManager();
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0); // Reset hour to the start of the day
-        calendar.set(Calendar.MINUTE, 0);      // Reset minute
-        calendar.set(Calendar.SECOND, 0);      // Reset second
-        calendar.set(Calendar.MILLISECOND, 0); // Reset millisecond
-        long startTime = calendar.getTimeInMillis(); // Start of the day
-
-        // Keep the end time as the current time
-        long endTime = System.currentTimeMillis(); // Current time
-
-        // Query the usage stats for the current day
-        List<UsageStats> usageStatsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime);
-        Map<String, UsageStatsModel> aggregatedUsageStats = new HashMap<>();
-
-        if (usageStatsList != null && !usageStatsList.isEmpty()) {
-            for (UsageStats usageStats : usageStatsList) {
-                String packageName = usageStats.getPackageName();
-                long usageDuration = usageStats.getTotalTimeInForeground();
-
-                if (usageDuration > 0) {
-                    UsageStatsModel existingModel = aggregatedUsageStats.get(packageName);
-                    if (existingModel != null) {
-                        // Update existing usage duration
-                        existingModel.setUsageDuration(existingModel.getUsageDuration() + usageDuration);
-                    } else {
-                        // Add new entry
-                        try {
-                            ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
-                            String appName = (String) packageManager.getApplicationLabel(applicationInfo);
-                            aggregatedUsageStats.put(packageName, new UsageStatsModel(appName, usageDuration));
-                        } catch (PackageManager.NameNotFoundException e) {
-                            e.printStackTrace(); // Handle error
-                        }
-                    }
-                }
-            }
-        }
-
-        // Assuming adapter and recyclerView are already defined and initialized
-        List<UsageStatsModel> appUsageInfoList = new ArrayList<>(aggregatedUsageStats.values());
-        appUsageInfoList.sort((o1, o2) -> Long.compare(o2.getUsageDuration(), o1.getUsageDuration()));
-
-        adapter = new UsageStatsAdapter(appUsageInfoList);
-        recyclerView.setAdapter(adapter);
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
     }
-
-    private String readJsonFromFile(String filename) {
-        StringBuilder json = new StringBuilder();
-        try {
-//            InputStream inputStream = getAssets().open(filename); // If stored in assets folder
-             InputStream inputStream = openFileInput(filename); // If stored in internal storage
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                json.append(line);
-            }
-            reader.close();
-            return json.toString();
-        } catch (IOException e) {
-            Log.e("MainActivity", "Error reading JSON file", e);
-            return null;
-        }
-    }
-
-    private List<DeviceEvent> parseDeviceEvents(String jsonData){
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String todayDate = dateFormat.format(new Date());
-
-        try {
-            JSONObject jsonObject1 = new JSONObject(jsonData);
-
-            JSONArray todayEvents = jsonObject1.getJSONArray(todayDate);
-
-            List<DeviceEvent> eventsList = new ArrayList<>();
-
-            for (int i = 0; i < todayEvents.length(); i++) {
-                JSONObject eventObj = todayEvents.getJSONObject(i);
-
-                String eventType = eventObj.getString("EventType");
-
-                List<DeviceEvent> event = new ArrayList<>();
-                event.add(new DeviceEvent(eventType, eventObj.getLong("Time"), 0));
-
-                if (eventObj.has("AppUsage")) {
-                    JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
-                    for (int j = 0; j < appUsageArray.length(); j++) {
-                        JSONObject appUsageEvent = appUsageArray.getJSONObject(j);
-                        List<DeviceEvent> appEvent = new ArrayList<>();
-                        appEvent.add(new DeviceEvent(appUsageEvent.getString("EventType"), appUsageEvent.getLong("Time"), appUsageEvent.getInt("Order")));
-
-                        eventsList.add(appEvent.get(0));  // Treat each app usage as an independent event
-
-                    }
-                    eventsList.add(event.get(0)); // Add the main event
-                }
-                else {
-                    eventsList.add(event.get(0));
-                }
-            }
-
-            return eventsList;
-//            Log.e("saeel", String.valueOf(eventsList.get(3).getEventType()));
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return new ArrayList<>();
-
-    }
-
-
-
-
-    private void displayEvents(List<DeviceEvent> events) {
-        DeviceEventAdapter adapter = new DeviceEventAdapter(this, events);
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
-    }
-
-
-
-
-
-
-
-
 }
