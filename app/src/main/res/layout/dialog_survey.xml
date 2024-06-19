@@ -1,157 +1,262 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:padding="16dp">
+    android:elevation="4dp"
+    app:cardCornerRadius="24dp"
+    android:orientation="vertical"
+    android:background="@color/background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="16dp">
 
-        <TextView
-            android:id="@+id/question1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="How big of an influence do you believe this would have on your behavior?"
-            android:textSize="18sp"
-            android:paddingBottom="10dp"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/answer1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textShortMessage|textMultiLine"
-                android:hint="Answer here..."
-                android:paddingStart="12dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp"
-                android:textColor="?android:textColorPrimary"
-                android:textSize="16sp"
-                android:gravity="top"
-                android:minLines="4"
-                android:maxLines="4"
-                android:scrollbars="vertical"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:id="@+id/likert_question"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="How willing are you to do this? (1-5)"
-            android:textSize="18sp"
-            android:paddingTop="16dp"
-            android:paddingBottom="8dp"/>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <SeekBar
-                android:id="@+id/likert_seekbar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:max="4"
-                android:progress="0"
-                android:progressDrawable="@drawable/seekbar_progress"
-                android:thumb="@drawable/seekbar_thumb"
-                android:splitTrack="false"
-                android:minHeight="8dp"
-                android:maxHeight="8dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
-
-            <TextView
-                android:id="@+id/label_left"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Very Unwilling"
-                android:textSize="16sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
-                android:paddingTop="8dp"/>
-
-            <TextView
-                android:id="@+id/label_right"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Very Willing"
-                android:textSize="16sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
-                android:paddingTop="8dp"/>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <TextView
-            android:id="@+id/question2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="What behaviors would you like to reduce or improve?"
-            android:textSize="18sp"
-            android:layout_marginTop="16dp"
-            android:paddingBottom="10dp"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/answer2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textShortMessage|textMultiLine"
-                android:hint="Answer here..."
-                android:paddingStart="12dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp"
-                android:textColor="?android:textColorPrimary"
-                android:textSize="16sp"
-                android:gravity="top"
-                android:minLines="4"
-                android:maxLines="4"
-                android:scrollbars="vertical"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:id="@+id/question3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Are there specific apps you want to reduce your time using?"
-            android:textSize="18sp"
-            android:layout_marginTop="16dp"
-            android:paddingBottom="10dp"/>
-
-        <TextView
-            android:id="@+id/app_selection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:background="@android:drawable/editbox_background"
-            android:drawableRight="@android:drawable/arrow_down_float"
-            android:drawablePadding="16dp"
-            android:hint="@string/select_applications"
-            android:padding="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/submit_button"
-            android:layout_gravity="end"
-            android:layout_marginTop="16dp"
+        <ImageButton
+            android:id="@+id/back_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/submit"
-            app:cornerRadius="4dp"/>
+            android:src="@android:drawable/ic_media_previous"
+            android:visibility="gone"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:tint="@color/material_dynamic_neutral70"
+            tools:ignore="UseAppTint"/>
+
+        <TextView
+            android:id="@+id/dialog_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Agreement Terms"
+            android:textSize="20sp"
+            android:gravity="center" />
+
+        <ImageButton
+            android:id="@+id/forward_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_next"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Forward"
+            android:tint="@color/material_dynamic_neutral70"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
-</ScrollView>
+
+    <ViewFlipper
+        android:id="@+id/view_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="16dp">
+
+        <!-- Agreement View -->
+<!--        <ScrollView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:padding="16dp">-->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/agreement_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Please read and accept the terms and conditions before proceeding."
+                    android:textSize="16sp"
+                    android:textColor="@color/colorPrimaryDark" />
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="400dp"
+                    android:layout_marginTop="8dp"
+                    android:elevation="2dp"
+                    app:cardCornerRadius="8dp">
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/agreement_details"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/terms_conditions"
+                            android:textSize="14sp"
+                            android:textColor="@android:color/black" />
+                    </ScrollView>
+                </androidx.cardview.widget.CardView>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/agree_button"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I Agree"
+                    app:cornerRadius="4dp" />
+            </LinearLayout>
+<!--        </ScrollView>-->
+
+        <!-- Survey View -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingVertical="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <TextView
+                    android:id="@+id/question1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="How big of an influence do you believe this would have on your behavior?"
+                    android:textSize="18sp"
+                    android:paddingBottom="10dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/answer1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textShortMessage|textMultiLine"
+                        android:hint="Answer here..."
+                        android:padding="12dp"
+                        android:textColor="?android:textColorPrimary"
+                        android:textSize="16sp"
+                        android:gravity="top"
+                        android:minLines="2"
+                        android:maxLines="2"
+                        android:scrollbars="vertical" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:id="@+id/likert_question"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="How willing are you to do this? (1-5)"
+                    android:textSize="18sp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <SeekBar
+                        android:id="@+id/likert_seekbar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:max="4"
+                        android:progress="0"
+                        android:progressDrawable="@drawable/seekbar_progress"
+                        android:thumb="@drawable/seekbar_thumb"
+                        android:splitTrack="false"
+                        android:minHeight="8dp"
+                        android:maxHeight="8dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/label_left"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Very Unwilling"
+                        android:textSize="16sp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
+                        android:paddingTop="8dp" />
+
+                    <TextView
+                        android:id="@+id/label_right"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Very Willing"
+                        android:textSize="16sp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
+                        android:paddingTop="8dp" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/question2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="What behaviors would you like to reduce or improve?"
+                    android:textSize="18sp"
+                    android:layout_marginTop="16dp"
+                    android:paddingBottom="10dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/answer2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textShortMessage|textMultiLine"
+                        android:hint="Answer here..."
+                        android:padding="12dp"
+                        android:textColor="?android:textColorPrimary"
+                        android:textSize="16sp"
+                        android:gravity="top"
+                        android:minLines="2"
+                        android:maxLines="2"
+                        android:scrollbars="vertical" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:id="@+id/question3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Are there specific apps you want to reduce your time using?"
+                    android:textSize="18sp"
+                    android:layout_marginTop="16dp"
+                    android:paddingBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/app_selection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:background="@android:drawable/editbox_background"
+                    android:drawableRight="@android:drawable/arrow_down_float"
+                    android:drawablePadding="16dp"
+                    android:hint="@string/select_applications"
+                    android:padding="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/submit_button"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/submit"
+                    app:cornerRadius="4dp" />
+            </LinearLayout>
+        </ScrollView>
+    </ViewFlipper>
+</LinearLayout>

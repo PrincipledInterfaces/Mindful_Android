@@ -26,10 +26,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -87,6 +89,7 @@ public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100;
     private static final String PREFS_NAME = "MyPrefsFile";
     private static final String SURVEY_SHOWN = "survey_shown";
+    private static final String AGREEMENT_ACCEPTED = "agreement_accepted";
 
     private FirebaseAuth auth;
     private FirebaseFirestore FireStoreDB;
@@ -257,70 +260,95 @@ public class MainActivity extends Activity {
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
 
+        ViewFlipper viewFlipper = surveyLayout.findViewById(R.id.view_flipper);
+        ImageButton backButton = surveyLayout.findViewById(R.id.back_button);
+        ImageButton forwardButton = surveyLayout.findViewById(R.id.forward_button);
+        TextView dialogTitle = surveyLayout.findViewById(R.id.dialog_title);
+        MaterialButton agreeButton = surveyLayout.findViewById(R.id.agree_button);
         MaterialButton submitButton = surveyLayout.findViewById(R.id.submit_button);
+
+        submitButton.setEnabled(false); // Disable submit button until agreement is accepted
 
         // Populate the app selection
         populateAppSelection(surveyLayout);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(surveyLayout)
-                .setTitle("Survey")
-                .create();
-        submitButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        // Handle survey submission here
+                .setCancelable(false);
 
-                        TextView question1 = surveyLayout.findViewById(R.id.question1);
-                        TextView question2 = surveyLayout.findViewById(R.id.question2);
-                        TextView likertQuestion = surveyLayout.findViewById(R.id.likert_question);
-
-                        // Retrieve answer TextInputEditText elements
-                        TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
-                        TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
-
-                        SeekBar likertSeekBar = surveyLayout.findViewById(R.id.likert_seekbar);
-
-                        // Get the text from the views
-                        String question1Text = question1.getText().toString();
-                        String answer1Text = answer1.getText().toString();
-                        String question2Text = question2.getText().toString();
-                        String answer2Text = answer2.getText().toString();
-
-                        int seekBarValue = likertSeekBar.getProgress() + 1;
-
-                        // Create a list of QuestionAnswer objects
-                        List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
-                        questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
-                        questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
-                        questionsAndAnswers.add(new QuestionAnswer(likertQuestion.getText().toString(), String.valueOf(seekBarValue)));
-
-                        // Collect selected apps
-                        List<String> selectedApps = new ArrayList<>();
-                        for (int i = 0; i < appNames.length; i++) {
-                            if (selectedItems[i]) {
-                                selectedApps.add(appNames[i]);
-                            }
-                        }
-
-                        saveSurveyDetailsToFirestore(questionsAndAnswers, selectedApps);
-
-                        // Mark survey as shown
-                        SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = settings.edit();
-                        editor.putBoolean(SURVEY_SHOWN, true);
-                        editor.apply();
-
-                        shouldShowSurvey = false; // Update the flag
-                    }
-                });
-
-        // Create and show the dialog
         surveyDialog = builder.create();
-        surveyDialog.setCancelable(false);
-        surveyDialog.setCanceledOnTouchOutside(false);
+
+        backButton.setOnClickListener(v -> {
+            viewFlipper.showPrevious();
+            dialogTitle.setText("Agreement Terms");
+            backButton.setVisibility(View.GONE);
+            forwardButton.setVisibility(View.VISIBLE);
+        });
+
+        forwardButton.setOnClickListener(v -> {
+            viewFlipper.showNext();
+            dialogTitle.setText("Survey");
+            backButton.setVisibility(View.VISIBLE);
+            forwardButton.setVisibility(View.GONE);
+        });
+
+        agreeButton.setOnClickListener(v -> {
+            agreeButton.setEnabled(false);
+            submitButton.setEnabled(true);  // Enable the submit button when user agrees
+            forwardButton.performClick();
+        });
+
+        submitButton.setOnClickListener(v -> {
+
+            // Handle survey submission here
+            TextView question1 = surveyLayout.findViewById(R.id.question1);
+            TextView question2 = surveyLayout.findViewById(R.id.question2);
+            TextView likertQuestion = surveyLayout.findViewById(R.id.likert_question);
+
+            // Retrieve answer TextInputEditText elements
+            TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
+            TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
+
+            SeekBar likertSeekBar = surveyLayout.findViewById(R.id.likert_seekbar);
+
+            // Get the text from the views
+            String question1Text = question1.getText().toString();
+            String answer1Text = answer1.getText().toString();
+            String question2Text = question2.getText().toString();
+            String answer2Text = answer2.getText().toString();
+
+            int seekBarValue = likertSeekBar.getProgress() + 1;
+
+            // Create a list of QuestionAnswer objects
+            List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
+            questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
+            questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
+            questionsAndAnswers.add(new QuestionAnswer(likertQuestion.getText().toString(), String.valueOf(seekBarValue)));
+
+            // Collect selected apps
+            List<String> selectedApps = new ArrayList<>();
+            for (int i = 0; i < appNames.length; i++) {
+                if (selectedItems[i]) {
+                    selectedApps.add(appNames[i]);
+                }
+            }
+
+            saveSurveyDetailsToFirestore(questionsAndAnswers, selectedApps);
+
+            // Mark survey as shown
+            SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putBoolean(SURVEY_SHOWN, true);
+            editor.apply();
+
+            shouldShowSurvey = false; // Update the flag
+            surveyDialog.dismiss();
+        });
+
         surveyDialog.show();
     }
+
+
 
     @Override
     protected void onResume() {
