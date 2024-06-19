@@ -142,8 +142,16 @@
             android:background="@android:drawable/editbox_background"
             android:drawableRight="@android:drawable/arrow_down_float"
             android:drawablePadding="16dp"
-            android:hint="Select Applications"
+            android:hint="@string/select_applications"
             android:padding="12dp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/submit_button"
+            android:layout_gravity="end"
+            android:layout_marginTop="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/submit"
+            app:cornerRadius="4dp"/>
     </LinearLayout>
 </ScrollView>

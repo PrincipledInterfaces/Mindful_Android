@@ -48,6 +48,7 @@ import com.example.myapplication.Model.UsageStatsModel;
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
 import com.example.myapplication.Util.AuthenticationUtils;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -256,15 +257,18 @@ public class MainActivity extends Activity {
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
 
+        MaterialButton submitButton = surveyLayout.findViewById(R.id.submit_button);
+
         // Populate the app selection
         populateAppSelection(surveyLayout);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(surveyLayout)
                 .setTitle("Survey")
-                .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+                .create();
+        submitButton.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(View view) {
                         // Handle survey submission here
 
                         TextView question1 = surveyLayout.findViewById(R.id.question1);
