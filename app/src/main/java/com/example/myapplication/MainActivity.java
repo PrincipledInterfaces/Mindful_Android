@@ -369,7 +369,7 @@ public class MainActivity extends Activity {
 
     private void initializeComponents() {
         FireStoreDB = FirebaseFirestore.getInstance();
-        deviceIdConcat = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
+        deviceIdConcat = user.getUid() + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
         runningExperimentDetailsTextView = findViewById(R.id.running_experiment_details);
         summaryTextView = findViewById(R.id.summaryTextView);
         textView = findViewById(R.id.user_details);

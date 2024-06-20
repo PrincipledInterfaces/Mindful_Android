@@ -28,6 +28,8 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -55,6 +57,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class CreateExperiment extends AppCompatActivity {
+
+    private FirebaseAuth auth;
+    private FirebaseUser user;
     private EditText experimentTitleInput;
     private EditText experimentGoalInput;
     private EditText stepsTakenInput;
@@ -75,6 +80,8 @@ public class CreateExperiment extends AppCompatActivity {
         setContentView(R.layout.activity_create_experiment);
 
         FireStoreDB = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        user = auth.getCurrentUser();
 
         MaterialToolbar toolbar = findViewById(R.id.top_app_toolbar);
         setSupportActionBar(toolbar);
@@ -94,7 +101,8 @@ public class CreateExperiment extends AppCompatActivity {
         });
 
         if (deviceId == null) {
-            deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+//            deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+            deviceId = user.getUid();
         }
         if (DeviceModel == null) {
             DeviceModel = Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
