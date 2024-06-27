@@ -1,6 +1,13 @@
 package com.example.myapplication;
 
+import android.Manifest;
+import android.app.AlarmManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -10,23 +17,24 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
 import com.example.myapplication.Util.AuthenticationUtils;
 import com.example.myapplication.Worker.NotificationWorker;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -38,28 +46,28 @@ import com.google.firebase.firestore.Query;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import com.example.myapplication.Receiver.DoNotDisturbReceiver;
 
 public class CreateExperiment extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseUser user;
+    private static final int REQUEST_CODE_EXACT_ALARM_PERMISSION = 100;
+
     private EditText experimentTitleInput;
     private EditText experimentGoalInput;
     private EditText stepsTakenInput;
@@ -67,11 +75,13 @@ public class CreateExperiment extends AppCompatActivity {
     private Spinner scheduleSpinner;
     private Spinner durationSpinner;
     private SwitchMaterial runningSwitch;
+    private MaterialCheckBox notificationCheckbox;
 
     private String deviceId;
     private String DeviceModel;
     private View loadingScreen;
     private FirebaseFirestore FireStoreDB;
+    private AlarmManager alarmManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +124,10 @@ public class CreateExperiment extends AppCompatActivity {
         scheduleSpinner = findViewById(R.id.schedule_spinner);
         durationSpinner = findViewById(R.id.duration_spinner);
         runningSwitch = findViewById(R.id.running_switch);
+        notificationCheckbox = findViewById(R.id.notification_checkbox);
         loadingScreen = findViewById(R.id.loading_screen);
+
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
         setDefaultScheduleValue();
         setDefaultDurationValue();
@@ -129,8 +142,6 @@ public class CreateExperiment extends AppCompatActivity {
                 submitExperiment();
             }
         });
-
-
     }
 
     private void setHelpDialog() {
@@ -194,17 +205,18 @@ public class CreateExperiment extends AppCompatActivity {
             String schedule = scheduleSpinner.getSelectedItem().toString();
             String duration = durationSpinner.getSelectedItem().toString();
             boolean isRunning = runningSwitch.isChecked();
+            boolean turnOffNotifications = notificationCheckbox.isChecked();
 
             if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
                 Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
                 hideLoadingScreen();
             } else {
-                saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning);
+                saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning, turnOffNotifications);
             }
         });
     }
 
-    private void saveExperimentToFirestore(String title, String goal, String steps, String schedule,String duration , boolean isRunning) {
+    private void saveExperimentToFirestore(String title, String goal, String steps, String schedule, String duration, boolean isRunning, boolean turnOffNotifications) {
         String deviceIdConcat = deviceId + "-" + DeviceModel;
 
         Instant nowUtc = Instant.now();
@@ -222,6 +234,7 @@ public class CreateExperiment extends AppCompatActivity {
         experiment.put("schedule", schedule);
         experiment.put("duration", duration);
         experiment.put("isRunning", isRunning);
+        experiment.put("turnOffNotifications", turnOffNotifications);
         experiment.put("createdAt", epochSeconds);
 
         FireStoreDB.collection("Devices").document(deviceIdConcat)
@@ -231,13 +244,12 @@ public class CreateExperiment extends AppCompatActivity {
                     cancelNotificationWorker();
                     Log.d("Firestore", "Experiment successfully written!");
                     if (isRunning) {
-                        initializeExperimentDays(deviceIdConcat, documentId, currentDateUTC, schedule, duration, title);
+                        initializeExperimentDays(deviceIdConcat, documentId, currentDateUTC, schedule, duration, title, turnOffNotifications);
                         showSuccessDialog(true);
                     } else {
                         showSuccessDialog(false);
                     }
                     hideLoadingScreen();
-
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error writing document", e);
@@ -248,7 +260,6 @@ public class CreateExperiment extends AppCompatActivity {
     }
 
     private void showSuccessDialog(boolean isRunning) {
-
         AlertDialog dialog;
         if (isRunning) {
             dialog = new AlertDialog.Builder(CreateExperiment.this)
@@ -256,7 +267,6 @@ public class CreateExperiment extends AppCompatActivity {
                     .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.\n\nIf you're ever unsure, you can log into the app to check whether today is a control or intervention day. To end the experiment and stop receiving notifications, simply log into the app and click the cancel button.\n\nGood luck!")
                     .setPositiveButton(android.R.string.ok, null)
                     .create();
-
         } else {
             dialog = new AlertDialog.Builder(CreateExperiment.this)
                     .setTitle("Experiment Submitted Successfully")
@@ -273,41 +283,38 @@ public class CreateExperiment extends AppCompatActivity {
         hideLoadingScreen();
     }
 
-    private void initializeExperimentDays(String deviceIdConcat, String documentId, LocalDate startDate, String schedule, String duration, String title) {
-        // Add the initial partial day (not counted as full day)
-//        saveExperimentDay(deviceIdConcat, documentId, startDate.minusDays(1), "partial_control");
-
-        // Determine the schedule and set up the days accordingly
+    private void initializeExperimentDays(String deviceIdConcat, String documentId, LocalDate startDate, String schedule, String duration, String title, boolean turnOffNotifications) {
         if ("Daily".equals(schedule)) {
-            setupDailySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
+            setupDailySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration), turnOffNotifications);
         } else if ("Every 2 Days".equals(schedule)) {
-            setupEvery2DaysSchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
+            setupEvery2DaysSchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration), turnOffNotifications);
         } else if ("Weekly".equals(schedule)) {
-            setupWeeklySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
+            setupWeeklySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration), turnOffNotifications);
         } else {
-            setupDailySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration));
+            setupDailySchedule(deviceIdConcat, documentId, startDate, title, getIntervalFromDuration(duration), turnOffNotifications);
         }
     }
 
-    private void setupDailySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration) {
+    private void setupDailySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration, boolean turnOffNotifications) {
         for (int i = 1; i <= duration; i++) {
             LocalDate currentDate = startDate.plusDays(i - 1);
             if (i % 2 == 1) { // Control days
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "control");
                 scheduleNotificationForDay("Evening", currentDate, "TOMORROW will be an <font color='#FF0000'>INTERVENTION DAY</font>. When you go to sleep, don’t forget to turn on your intervention!", title, documentId, deviceIdConcat, "control");
-//                if (i > 1) {
-//                    scheduleNotificationForDay("Evening", currentDate.minusDays(1), "TOMORROW will be an INTERVENTION DAY. When you go to sleep, don’t forget to turn on your intervention!", title);
-//                }
             } else { // Intervention days
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "intervention");
                 scheduleNotificationForDay("Morning", currentDate, "TODAY is an <font color='#FF0000'>INTERVENTION DAY</font>. Make sure you have your notifications on!", title, documentId, deviceIdConcat, "intervention");
-                scheduleNotificationForDay("Evening", currentDate, "TOMORROW will be a <font color='#00FF00'>CONTROL DAY</font>.",  title, documentId, deviceIdConcat, "intervention");
+                scheduleNotificationForDay("Evening", currentDate, "TOMORROW will be a <font color='#00FF00'>CONTROL DAY</font>.", title, documentId, deviceIdConcat, "intervention");
+                if (turnOffNotifications) {
+                    scheduleDoNotDisturb(true, currentDate, 8, 0); // Enable DND at 8 AM
+                    scheduleDoNotDisturb(false, currentDate, 20, 0); // Disable DND at 8 PM
+                }
             }
         }
     }
 
-    private void setupEvery2DaysSchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration) {
-        for (int i = 1; i <= duration; i++)  {
+    private void setupEvery2DaysSchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration, boolean turnOffNotifications) {
+        for (int i = 1; i <= duration; i++) {
             LocalDate currentDate = startDate.plusDays(i - 1);
             if (i % 4 == 1 || i % 4 == 2) { // Control days
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "control");
@@ -318,7 +325,10 @@ public class CreateExperiment extends AppCompatActivity {
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "intervention");
                 scheduleNotificationForDay("Morning", currentDate, "TODAY is an <font color='#FF0000'>INTERVENTION DAY</font>. Make sure you have your notifications on!", title, documentId, deviceIdConcat, "intervention");
                 if (i % 4 == 3) {
-//                    scheduleNotificationForDay("Evening", currentDate, "TOMORROW will be an INTERVENTION DAY. When you go to sleep, don’t forget to turn on your intervention!", title, documentId, deviceIdConcat, "intervention");
+                    if (turnOffNotifications) {
+                        scheduleDoNotDisturb(true, currentDate, 8, 0); // Enable DND at 8 AM
+                        scheduleDoNotDisturb(false, currentDate, 20, 0); // Disable DND at 8 PM
+                    }
                 } else {
                     scheduleNotificationForDay("Evening", currentDate, "TOMORROW will be a <font color='#00FF00'>CONTROL DAY</font>.", title, documentId, deviceIdConcat, "intervention");
                 }
@@ -326,7 +336,7 @@ public class CreateExperiment extends AppCompatActivity {
         }
     }
 
-    private void setupWeeklySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration) {
+    private void setupWeeklySchedule(String deviceIdConcat, String documentId, LocalDate startDate, String title, int duration, boolean turnOffNotifications) {
         for (int i = 1; i <= duration; i++) {
             LocalDate currentDate = startDate.plusDays(i - 1);
 
@@ -339,14 +349,18 @@ public class CreateExperiment extends AppCompatActivity {
                 saveExperimentDay(deviceIdConcat, documentId, currentDate, "intervention");
                 if ((i - 1) % 7 == 0) { // First day of intervention week
                     scheduleNotificationForDay("Morning", currentDate, "TODAY is an <font color='#FF0000'>INTERVENTION DAY</font>. Make sure you have your notifications on!", title, documentId, deviceIdConcat, "intervention");
+                    if (turnOffNotifications) {
+                        scheduleDoNotDisturb(true, currentDate, 8, 0); // Enable DND at 8 AM
+                    }
                 } else if ((i - 1) % 7 == 6) { // Last day of intervention week
                     scheduleNotificationForDay("Evening", currentDate, "TOMORROW will be a <font color='#00FF00'>CONTROL DAY</font>.", title, documentId, deviceIdConcat, "intervention");
+                    if (turnOffNotifications) {
+                        scheduleDoNotDisturb(false, currentDate, 20, 0); // Disable DND at 8 PM
+                    }
                 }
             }
         }
     }
-
-
 
     private void saveExperimentDay(String deviceIdConcat, String documentId, LocalDate date, String dayType) {
         Map<String, Object> experimentDaysArray = new HashMap<>();
@@ -377,7 +391,6 @@ public class CreateExperiment extends AppCompatActivity {
         editor.apply();
     }
 
-
     private void scheduleNotificationForDay(String time, LocalDate date, String message, String title, String documentId, String deviceIdConcat, String dayType) {
         Data data = new Data.Builder()
                 .putString("title", title)
@@ -407,16 +420,6 @@ public class CreateExperiment extends AppCompatActivity {
             initialDelay += TimeUnit.DAYS.toMillis(1); // Schedule for the next day if the time has already passed today
         }
 
-
-        //test notification
-//        OneTimeWorkRequest testWorkRequest = new OneTimeWorkRequest.Builder(NotificationWorker.class)
-//                .setInputData(data)
-//                .addTag("TestNotification")
-//                .build();
-//
-//        WorkManager.getInstance(getApplicationContext()).enqueue(testWorkRequest);
-
-
         PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(NotificationWorker.class, 1, TimeUnit.DAYS)
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
                 .setInputData(data)
@@ -424,6 +427,39 @@ public class CreateExperiment extends AppCompatActivity {
                 .build();
         Log.e("scheduleNotificationForDay", time + "Notification" + date.toString() + " " +  message);
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(time + "Notification" + date.toString(), ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, workRequest);
+    }
+
+    private void scheduleDoNotDisturb(boolean enable, LocalDate date, int hour, int minute) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Request exact alarm permission
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                startActivityForResult(intent, REQUEST_CODE_EXACT_ALARM_PERMISSION);
+            }
+        }
+
+        Calendar now = Calendar.getInstance();
+        Calendar dndTime = Calendar.getInstance();
+        dndTime.set(Calendar.YEAR, date.getYear());
+        dndTime.set(Calendar.MONTH, date.getMonthValue() - 1); // Months are 0-based in Calendar
+        dndTime.set(Calendar.DAY_OF_MONTH, date.getDayOfMonth());
+        dndTime.set(Calendar.HOUR_OF_DAY, hour);
+        dndTime.set(Calendar.MINUTE, minute);
+
+        long initialDelay = dndTime.getTimeInMillis() - now.getTimeInMillis();
+        if (initialDelay < 0) {
+            initialDelay += TimeUnit.DAYS.toMillis(1); // Schedule for the next day if the time has already passed today
+        }
+
+        Intent intent = new Intent(this, DoNotDisturbReceiver.class);
+        intent.setAction(enable ? DoNotDisturbReceiver.ACTION_ENABLE_DND : DoNotDisturbReceiver.ACTION_DISABLE_DND);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, enable ? 0 : 1, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, dndTime.getTimeInMillis(), pendingIntent);
+        }
     }
 
     private void cancelNotificationWorker() {
@@ -449,6 +485,7 @@ public class CreateExperiment extends AppCompatActivity {
                         String schedule = lastExperiment.getString("schedule");
                         String duration = lastExperiment.getString("duration");
                         Boolean isRunning = lastExperiment.getBoolean("isRunning");
+                        Boolean turnOffNotifications = lastExperiment.getBoolean("turnOffNotifications");
 
                         // Example of setting values to UI elements (make sure this runs on the UI thread if it's not already)
                         runOnUiThread(() -> {
@@ -464,8 +501,8 @@ public class CreateExperiment extends AppCompatActivity {
                             scheduleSpinner.setSelection(position);
                             durationSpinner.setSelection(durPosition);
                             runningSwitch.setChecked(isRunning != null && isRunning);
+                            notificationCheckbox.setChecked(turnOffNotifications != null && turnOffNotifications);
                         });
-
                     } else {
                         Log.d("Firestore", "No experiments found or failed to fetch the data.");
                     }
@@ -541,5 +578,15 @@ public class CreateExperiment extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_EXACT_ALARM_PERMISSION) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(this, "Exact alarm permission not granted.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

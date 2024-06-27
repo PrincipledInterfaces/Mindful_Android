@@ -41,6 +41,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <ToggleButton
+        android:id="@+id/change_mode_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textOn="Disable Do Not Disturb"
+        android:textOff="Enable Do Not Disturb"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/running_experiment_details"/>
+
+
     <!-- Summary of daily usage -->
     <TextView
         android:id="@+id/summaryTextView"
@@ -50,7 +61,7 @@
         android:textColor="@color/textColor"
         android:gravity="center"
         android:padding="16dp"
-        app:layout_constraintTop_toBottomOf="@id/running_experiment_details"
+        app:layout_constraintTop_toBottomOf="@id/change_mode_toggle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

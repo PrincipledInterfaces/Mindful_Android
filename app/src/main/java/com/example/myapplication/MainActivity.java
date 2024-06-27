@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import android.app.Activity;
 import android.app.AppOpsManager;
+import android.app.NotificationManager;
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
@@ -24,6 +25,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -87,6 +89,7 @@ public class MainActivity extends Activity {
     private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
     private static final int USAGE_STATS_PERMISSION_REQUEST_CODE = 1;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100;
+    private static final int REQUEST_NOTIFICATION_POLICY_ACCESS = 1;
     private static final String PREFS_NAME = "MyPrefsFile";
     private static final String SURVEY_SHOWN = "survey_shown";
     private static final String AGREEMENT_ACCEPTED = "agreement_accepted";
@@ -104,6 +107,7 @@ public class MainActivity extends Activity {
     private TextView emptyMessageTextView;
     private RecyclerView recyclerView;
     private FloatingActionButton button;
+    private Button changeModeButton;
     private boolean shouldShowSurvey = false;
     private AlertDialog surveyDialog;
     private TextView appSelection;
@@ -138,6 +142,8 @@ public class MainActivity extends Activity {
                 startActivityForResult(new Intent(this, CreateExperiment.class), CREATE_EXPERIMENT_REQUEST_CODE);
             });
 
+            changeModeButton.setOnClickListener(v -> openChangeModeSettings());
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                     requestNotificationPermission();
@@ -145,27 +151,6 @@ public class MainActivity extends Activity {
             }
         }
     }
-
-//    private void populateAppSelection(View surveyLayout) {
-//        PackageManager pm = getPackageManager();
-//        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-//        List<String> appNameList = new ArrayList<>();
-//
-//        for (ApplicationInfo app : apps) {
-//            appNameList.add(pm.getApplicationLabel(app).toString());
-//        }
-//
-//        appNames = appNameList.toArray(new String[0]);
-//        selectedItems = new boolean[appNames.length];
-//
-//        appSelection = surveyLayout.findViewById(R.id.app_selection);
-//        appSelection.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                showMultiSelectDialog();
-//            }
-//        });
-//    }
 
     private void populateAppSelection(View surveyLayout) {
         PackageManager pm = getPackageManager();
@@ -348,8 +333,6 @@ public class MainActivity extends Activity {
         surveyDialog.show();
     }
 
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -375,6 +358,7 @@ public class MainActivity extends Activity {
         textView = findViewById(R.id.user_details);
         emptyMessageTextView = findViewById(R.id.empty_message);
         button = findViewById(R.id.new_experiment);
+        changeModeButton = findViewById(R.id.change_mode_toggle); // Initialize the change mode button
         recyclerView = findViewById(R.id.recyclerView);
     }
 
@@ -601,6 +585,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == USAGE_STATS_PERMISSION_REQUEST_CODE) {
             if (hasUsageStatsPermission()) {
                 startAppUsageService();
@@ -609,12 +594,62 @@ public class MainActivity extends Activity {
             }
         } else if (requestCode == CREATE_EXPERIMENT_REQUEST_CODE && resultCode == RESULT_OK) {
             updateRunningExperimentDetails();
+        } else if (requestCode == REQUEST_NOTIFICATION_POLICY_ACCESS) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (notificationManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (notificationManager.isNotificationPolicyAccessGranted()) {
+                    // Permission granted, enable DND mode
+                    enableDoNotDisturbMode(notificationManager);
+                } else {
+                    // Permission not granted, handle accordingly
+                    Toast.makeText(this, "Do Not Disturb permission not granted", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 
     private void startAppUsageService() {
         Intent serviceIntent = new Intent(this, AppUsageService.class);
         startService(serviceIntent);
+    }
+
+    private void openChangeModeSettings() {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && notificationManager != null) {
+            if (!notificationManager.isNotificationPolicyAccessGranted()) {
+                // Request permission
+                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                startActivityForResult(intent, REQUEST_NOTIFICATION_POLICY_ACCESS);
+            } else {
+                // Permission granted, toggle DND mode
+                toggleDoNotDisturbMode(notificationManager);
+            }
+        } else {
+            // Fallback to general settings if the specific intent fails.
+            Intent intent = new Intent(Settings.ACTION_SETTINGS);
+            startActivity(intent);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void toggleDoNotDisturbMode(NotificationManager notificationManager) {
+        int currentFilter = notificationManager.getCurrentInterruptionFilter();
+        if (currentFilter == NotificationManager.INTERRUPTION_FILTER_NONE) {
+            // Currently in DND mode, disable it
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+            Toast.makeText(this, "Do Not Disturb Disabled", Toast.LENGTH_SHORT).show();
+        } else {
+            // Currently not in DND mode, enable it
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
+            Toast.makeText(this, "Do Not Disturb Enabled", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void enableDoNotDisturbMode(NotificationManager notificationManager) {
+        notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
     }
 
     @Override
