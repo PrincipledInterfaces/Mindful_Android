@@ -9,5 +9,9 @@
     <!-- PopupOverlay style for the Toolbar -->
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
-
+    <style name="CustomTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">#FF0000</item> <!-- Border color -->
+        <item name="boxStrokeWidth">2dp</item> <!-- Border width -->
+        <item name="boxBackgroundMode">outline</item> <!-- Box mode outline for border -->
+    </style>
 </resources>

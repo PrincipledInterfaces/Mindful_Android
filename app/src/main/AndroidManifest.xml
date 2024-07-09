@@ -40,9 +40,12 @@
         android:theme="@style/Theme.Material3.Light.NoActionBar"
         tools:targetApi="31">
         <activity
+            android:name=".MyAccountActivity"
+            android:exported="false" />
+        <activity
             android:name=".CreateExperiment"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan"/>
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".Register"
             android:exported="false"
@@ -69,7 +72,6 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
-
         <receiver
             android:name=".Receiver.BootCompletedReceiver"
             android:exported="true">
@@ -85,7 +87,6 @@
         <service
             android:name=".Service.AppUsageService"
             android:exported="false" />
-
         <service
             android:name=".Service.MyFirebaseMessagingService"
             android:exported="false">

@@ -19,5 +19,11 @@
         app:showAsAction="ifRoom"
     />
 
+    <item android:id="@+id/my_account"
+        android:icon="@drawable/baseline_manage_accounts_24"
+        android:title="@string/my_account"
+        app:showAsAction="ifRoom"
+        android:orderInCategory="200"/>
+
 
 </menu>

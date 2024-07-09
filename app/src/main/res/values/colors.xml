@@ -6,4 +6,5 @@
     <color name="background">#F5F5F5</color> <!-- Example background color -->
     <color name="lightBackground">#F8F9FA</color>
     <color name="textColor">#212529</color>
+    <color name="custom_red">#D32F2F</color>
 </resources>
