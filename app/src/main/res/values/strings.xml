@@ -27,6 +27,7 @@
     <string name="modal_btn_text">Got it!</string>
     <string name="help_txt">Help</string>
     <string name="select_applications">Select Applications</string>
+    <string name="my_account">My Account</string>
 
     <string-array name="schedule_options">
         <item>Daily</item>
