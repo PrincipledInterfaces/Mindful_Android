@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -59,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 public class CreateExperiment extends AppCompatActivity {
 
     private FirebaseAuth auth;
-    private FirebaseUser user;
+    private String fid;
     private EditText experimentTitleInput;
     private EditText experimentGoalInput;
     private EditText stepsTakenInput;
@@ -80,8 +81,13 @@ public class CreateExperiment extends AppCompatActivity {
         setContentView(R.layout.activity_create_experiment);
 
         FireStoreDB = FirebaseFirestore.getInstance();
-        auth = FirebaseAuth.getInstance();
-        user = auth.getCurrentUser();
+        Intent intent = getIntent();
+        if (intent != null) {
+            fid = intent.getStringExtra("fid");
+        }
+        else {
+            fid = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
 
         MaterialToolbar toolbar = findViewById(R.id.top_app_toolbar);
         setSupportActionBar(toolbar);
@@ -102,7 +108,7 @@ public class CreateExperiment extends AppCompatActivity {
 
         if (deviceId == null) {
 //            deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
-            deviceId = user.getUid();
+            deviceId = fid;
         }
         if (DeviceModel == null) {
             DeviceModel = Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
@@ -113,7 +119,7 @@ public class CreateExperiment extends AppCompatActivity {
         stepsTakenInput = findViewById(R.id.steps_taken);
         scheduleSpinner = findViewById(R.id.schedule_spinner);
         durationSpinner = findViewById(R.id.duration_spinner);
-        runningSwitch = findViewById(R.id.running_switch);
+//        runningSwitch = findViewById(R.id.running_switch);
         loadingScreen = findViewById(R.id.loading_screen);
 
         setDefaultScheduleValue();
@@ -193,7 +199,7 @@ public class CreateExperiment extends AppCompatActivity {
             String steps = stepsTakenInput.getText().toString();
             String schedule = scheduleSpinner.getSelectedItem().toString();
             String duration = durationSpinner.getSelectedItem().toString();
-            boolean isRunning = runningSwitch.isChecked();
+            boolean isRunning = true;
 
             if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
                 Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
@@ -463,7 +469,7 @@ public class CreateExperiment extends AppCompatActivity {
                             stepsTakenInput.setText(steps);
                             scheduleSpinner.setSelection(position);
                             durationSpinner.setSelection(durPosition);
-                            runningSwitch.setChecked(isRunning != null && isRunning);
+//                            runningSwitch.setChecked(isRunning != null && isRunning);
                         });
 
                     } else {
@@ -536,10 +542,10 @@ public class CreateExperiment extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.menu_logout) {
-            AuthenticationUtils.logoutUser(this);
-            return true;
-        }
+//        if (id == R.id.menu_logout) {
+//            AuthenticationUtils.logoutUser(this);
+//            return true;
+//        }
         return super.onOptionsItemSelected(item);
     }
 }

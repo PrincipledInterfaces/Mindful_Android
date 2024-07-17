@@ -32,6 +32,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -51,6 +52,7 @@ import com.example.myapplication.Model.UsageStatsModel;
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
 import com.example.myapplication.Util.AuthenticationUtils;
+import com.example.myapplication.Util.FirebaseUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -83,6 +85,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends Activity {
     private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
@@ -90,11 +94,13 @@ public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100;
     private static final String PREFS_NAME = "MyPrefsFile";
     private static final String SURVEY_SHOWN = "survey_shown";
-    private static final String AGREEMENT_ACCEPTED = "agreement_accepted";
 
     private FirebaseAuth auth;
     private FirebaseFirestore FireStoreDB;
-    private FirebaseUser user;
+    private String fid;
+
+    CountDownLatch latch = new CountDownLatch(1);
+
     private String deviceIdConcat;
     private List<DeviceEvent> events;
     private String jsonData;
@@ -118,33 +124,32 @@ public class MainActivity extends Activity {
         FirebaseApp.initializeApp(this);
         setContentView(R.layout.activity_main);
 
-        auth = FirebaseAuth.getInstance();
-        user = auth.getCurrentUser();
-
+//        auth = FirebaseAuth.getInstance();
+//        user = auth.getCurrentUser();
+        if (fid == null){
+            fid = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
         initializeComponents();
 
-        if (user == null) {
-            startActivity(new Intent(this, Login.class));
-            finish();
-        } else {
-            textView.setText("Welcome, " + user.getEmail());
-            setupToolbar();
-            checkUsageStatsPermission();
+        textView.setText("Welcome, Participant");
+        setupToolbar();
+        checkUsageStatsPermission();
 
-            SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
 
-            button.setOnClickListener(v -> {
-                Toast.makeText(MainActivity.this, "Starting new Experiment", Toast.LENGTH_LONG).show();
-                startActivityForResult(new Intent(this, CreateExperiment.class), CREATE_EXPERIMENT_REQUEST_CODE);
-            });
+        button.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CreateExperiment.class);
+            intent.putExtra("fid", fid);
+            startActivityForResult(intent, CREATE_EXPERIMENT_REQUEST_CODE);
+        });
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    requestNotificationPermission();
-                }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermission();
             }
         }
+
     }
 
 //    private void populateAppSelection(View surveyLayout) {
@@ -257,6 +262,7 @@ public class MainActivity extends Activity {
     }
 
     private void showSurveyModal() {
+
         // Inflate the custom layout
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
@@ -389,7 +395,7 @@ public class MainActivity extends Activity {
 
     private void initializeComponents() {
         FireStoreDB = FirebaseFirestore.getInstance();
-        deviceIdConcat = user.getUid() + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
+        deviceIdConcat = fid + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
         runningExperimentDetailsTextView = findViewById(R.id.running_experiment_details);
         summaryTextView = findViewById(R.id.summaryTextView);
         textView = findViewById(R.id.user_details);
@@ -447,6 +453,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateRunningExperimentDetails() {
+        Log.e("didi", deviceIdConcat);
         FireStoreDB.collection("Devices").document(deviceIdConcat)
                 .collection("experiments")
                 .whereEqualTo("isRunning", true)
@@ -575,20 +582,10 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.menu_logout) {
-            AuthenticationUtils.logoutUser(this);
-            return true;
-        } else if (item.getItemId() == R.id.action_refresh) {
+        if (item.getItemId() == R.id.action_refresh) {
             updateRunningExperimentDetails();
             fetchAndDisplayEvents();
             Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
-            return true;
-        } else if (item.getItemId() == R.id.my_account) {
-            Intent intent = new Intent(this, MyAccountActivity.class);
-            if (user != null) {
-                intent.putExtra("USER_EMAIL", user.getEmail());
-            }
-            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
