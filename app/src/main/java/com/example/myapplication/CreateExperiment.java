@@ -454,7 +454,7 @@ public class CreateExperiment extends AppCompatActivity {
                         String steps = lastExperiment.getString("steps");
                         String schedule = lastExperiment.getString("schedule");
                         String duration = lastExperiment.getString("duration");
-                        Boolean isRunning = lastExperiment.getBoolean("isRunning");
+//                        Boolean isRunning = lastExperiment.getBoolean("isRunning");
 
                         // Example of setting values to UI elements (make sure this runs on the UI thread if it's not already)
                         runOnUiThread(() -> {
