@@ -66,7 +66,7 @@
                 android:id="@+id/question1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="How big of an influence do you believe this would have on your behavior?"
+                android:text="Were you using your phone with any other interventions or settings to alter your behavior this month?"
                 android:textSize="18sp"
                 android:paddingBottom="10dp" />
 
@@ -89,60 +89,60 @@
                     android:scrollbars="vertical" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
-                android:id="@+id/likert_question"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="How willing are you to do this? (1-5)"
-                android:textSize="18sp"
-                android:paddingTop="16dp"
-                android:paddingBottom="8dp" />
+<!--            <TextView-->
+<!--                android:id="@+id/likert_question"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="How willing are you to do this? (1-5)"-->
+<!--                android:textSize="18sp"-->
+<!--                android:paddingTop="16dp"-->
+<!--                android:paddingBottom="8dp" />-->
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+<!--            <androidx.constraintlayout.widget.ConstraintLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content">-->
 
-                <SeekBar
-                    android:id="@+id/likert_seekbar"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:max="4"
-                    android:progress="0"
-                    android:progressDrawable="@drawable/seekbar_progress"
-                    android:thumb="@drawable/seekbar_thumb"
-                    android:splitTrack="false"
-                    android:minHeight="8dp"
-                    android:maxHeight="8dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+<!--                <SeekBar-->
+<!--                    android:id="@+id/likert_seekbar"-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:max="4"-->
+<!--                    android:progress="0"-->
+<!--                    android:progressDrawable="@drawable/seekbar_progress"-->
+<!--                    android:thumb="@drawable/seekbar_thumb"-->
+<!--                    android:splitTrack="false"-->
+<!--                    android:minHeight="8dp"-->
+<!--                    android:maxHeight="8dp"-->
+<!--                    app:layout_constraintStart_toStartOf="parent"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toTopOf="parent" />-->
 
-                <TextView
-                    android:id="@+id/label_left"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Very Unwilling"
-                    android:textSize="16sp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
-                    android:paddingTop="8dp" />
+<!--                <TextView-->
+<!--                    android:id="@+id/label_left"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Very Unwilling"-->
+<!--                    android:textSize="16sp"-->
+<!--                    app:layout_constraintStart_toStartOf="parent"-->
+<!--                    app:layout_constraintTop_toBottomOf="@id/likert_seekbar"-->
+<!--                    android:paddingTop="8dp" />-->
 
-                <TextView
-                    android:id="@+id/label_right"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Very Willing"
-                    android:textSize="16sp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
-                    android:paddingTop="8dp" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+<!--                <TextView-->
+<!--                    android:id="@+id/label_right"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Very Willing"-->
+<!--                    android:textSize="16sp"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toBottomOf="@id/likert_seekbar"-->
+<!--                    android:paddingTop="8dp" />-->
+<!--            </androidx.constraintlayout.widget.ConstraintLayout>-->
 
             <TextView
                 android:id="@+id/question2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="What behaviors would you like to reduce or improve?"
+                android:text="Are there any other things going on in your life that might've influenced your phone habits this month?"
                 android:textSize="18sp"
                 android:layout_marginTop="16dp"
                 android:paddingBottom="10dp" />
@@ -170,21 +170,94 @@
                 android:id="@+id/question3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Are there specific apps you want to reduce your time using?"
+                android:text="Are there any new habits you adopted that you would like to change?"
                 android:textSize="18sp"
                 android:layout_marginTop="16dp"
                 android:paddingBottom="10dp" />
 
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/answer3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textShortMessage|textMultiLine"
+                    android:hint="Answer here..."
+                    android:padding="12dp"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp"
+                    android:gravity="top"
+                    android:minLines="2"
+                    android:maxLines="2"
+                    android:scrollbars="vertical" />
+            </com.google.android.material.textfield.TextInputLayout>
+<!--            <TextView-->
+<!--                android:id="@+id/app_selection"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_centerInParent="true"-->
+<!--                android:background="@android:drawable/editbox_background"-->
+<!--                android:drawableRight="@android:drawable/arrow_down_float"-->
+<!--                android:drawablePadding="16dp"-->
+<!--                android:hint="@string/select_applications"-->
+<!--                android:padding="12dp" />-->
+
+            <!-- Question text for checkboxes -->
             <TextView
-                android:id="@+id/app_selection"
+                android:id="@+id/checkbox_question"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:background="@android:drawable/editbox_background"
-                android:drawableRight="@android:drawable/arrow_down_float"
-                android:drawablePadding="16dp"
-                android:hint="@string/select_applications"
-                android:padding="12dp" />
+                android:text="Check any of the following interventions if you were using them regularly this month:"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:paddingBottom="8dp" />
+
+            <!-- Checkbox group -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal"
+                android:layout_marginTop="16dp">
+
+                <CheckBox
+                    android:id="@+id/checkbox_focus_mode"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Focus mode" />
+
+                <CheckBox
+                    android:id="@+id/checkbox_grayscale_screen"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Grayscale screen" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal"
+                android:layout_marginTop="8dp">
+
+                <CheckBox
+                    android:id="@+id/checkbox_notifications_off"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Notifications off" />
+
+                <CheckBox
+                    android:id="@+id/checkbox_deleted_apps"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Deleted apps" />
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/submit_button"

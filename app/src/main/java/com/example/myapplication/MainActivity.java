@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -89,6 +90,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class MainActivity extends Activity {
     private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
@@ -413,11 +415,17 @@ public class MainActivity extends Activity {
         TextView question3 = surveyLayout.findViewById(R.id.question3);
         TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
         TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
-        TextView appSelection = surveyLayout.findViewById(R.id.app_selection);
-        SeekBar likertSeekBar = surveyLayout.findViewById(R.id.likert_seekbar);
+        TextView answer3 = surveyLayout.findViewById(R.id.answer3);
+
+        // Find CheckBoxes
+        TextView checkboxQuestion = surveyLayout.findViewById(R.id.checkbox_question);
+        CheckBox checkboxFocusMode = surveyLayout.findViewById(R.id.checkbox_focus_mode);
+        CheckBox checkboxGrayscaleScreen = surveyLayout.findViewById(R.id.checkbox_grayscale_screen);
+        CheckBox checkboxNotificationsOff = surveyLayout.findViewById(R.id.checkbox_notifications_off);
+        CheckBox checkboxDeletedApps = surveyLayout.findViewById(R.id.checkbox_deleted_apps);
+
         MaterialButton submitButton = surveyLayout.findViewById(R.id.submit_button);
 
-//        populateAppSelection(surveyLayout);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setView(surveyLayout)
@@ -430,13 +438,27 @@ public class MainActivity extends Activity {
             String answer1Text = answer1.getText().toString();
             String question2Text = question2.getText().toString();
             String answer2Text = answer2.getText().toString();
-            int likertValue = likertSeekBar.getProgress() + 1;
+            String question3Text = question3.getText().toString();
+            String answer3Text = answer3.getText().toString();
+
+            // Get checkbox states
+            String checkboxQuestionText = checkboxQuestion.getText().toString();
+            boolean isFocusModeChecked = checkboxFocusMode.isChecked();
+            boolean isGrayscaleScreenChecked = checkboxGrayscaleScreen.isChecked();
+            boolean areNotificationsOffChecked = checkboxNotificationsOff.isChecked();
+            boolean areDeletedAppsChecked = checkboxDeletedApps.isChecked();
+
+            List<QuestionAnswer> checkboxQuestionAndAnswers = new ArrayList<>();
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Focus Mode: ", String.valueOf(isFocusModeChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Grayscale screen: ", String.valueOf(isGrayscaleScreenChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Notifications off: ", String.valueOf(areNotificationsOffChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Deleted apps: ", String.valueOf(areDeletedAppsChecked)));
 
             List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
             questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
             questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
-            questionsAndAnswers.add(new QuestionAnswer("How willing are you to do this? (1-5)", String.valueOf(likertValue)));
-            questionsAndAnswers.add(new QuestionAnswer(question3.getText().toString(), appSelection.getText().toString()));
+            questionsAndAnswers.add(new QuestionAnswer(question3Text, answer3Text));
+            questionsAndAnswers.add(new QuestionAnswer(checkboxQuestionText, checkboxQuestionAndAnswers));
 
             // Save survey details to Firestore
             saveSurveyDetailsToFirestore(questionsAndAnswers, null, "monthly");
