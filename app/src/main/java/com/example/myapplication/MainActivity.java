@@ -711,6 +711,12 @@ public class MainActivity extends Activity {
             Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
             return true;
         }
+        else if (item.getItemId() == R.id.my_account) {
+            Intent intent = new Intent(this, MyAccountActivity.class);
+            intent.putExtra("deviceIdConcat", deviceIdConcat);
+            startActivity(intent);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
