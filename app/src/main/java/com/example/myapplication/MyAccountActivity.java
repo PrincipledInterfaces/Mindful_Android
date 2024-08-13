@@ -4,16 +4,19 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -78,19 +81,38 @@ public class MyAccountActivity extends AppCompatActivity {
     }
 
     private void showDeleteAccountDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Delete Account")
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Delete Account")
                 .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
-                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        showLoadingScreen();
-                        deleteUserAccount();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+                .setPositiveButton("Delete", null)
+                .setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Get the "Delete" button
+        Button deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+
+        // Apply padding programmatically
+        int paddingHorizontal = (int) (16 * getResources().getDisplayMetrics().density); // Convert 16dp to pixels
+        int paddingVertical = (int) (8 * getResources().getDisplayMetrics().density); // Convert 8dp to pixels
+        deleteButton.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
+
+        // Set the background color programmatically
+        deleteButton.setBackgroundColor(ContextCompat.getColor(this, R.color.custom_red));
+        deleteButton.setTextColor(Color.WHITE);
+
+        // Set the onClickListener after customization
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showLoadingScreen();
+                deleteUserAccount();
+                dialog.dismiss();
+            }
+        });
     }
+
 
     private void showLoadingScreen() {
         loadingScreen.setVisibility(View.VISIBLE);
