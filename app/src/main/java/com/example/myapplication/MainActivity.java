@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -32,6 +33,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -45,12 +47,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.Adapter.DeviceEventAdapter;
 import com.example.myapplication.Adapter.MultiSelectAdapter;
 import com.example.myapplication.Model.DeviceEvent;
+import com.example.myapplication.Model.Survey.MonthlySurvey;
 import com.example.myapplication.Model.Survey.QuestionAnswer;
 import com.example.myapplication.Model.SurveyDetails;
 import com.example.myapplication.Model.UsageStatsModel;
 import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
 import com.example.myapplication.Util.AuthenticationUtils;
+import com.example.myapplication.Util.FirebaseUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -83,18 +87,26 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class MainActivity extends Activity {
     private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
     private static final int USAGE_STATS_PERMISSION_REQUEST_CODE = 1;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100;
     private static final String PREFS_NAME = "MyPrefsFile";
+    private static final String FIRST_RUN_DATE = "first_run_date";
+    private static final String LAST_SURVEY_DATE = "last_survey_date";
     private static final String SURVEY_SHOWN = "survey_shown";
-    private static final String AGREEMENT_ACCEPTED = "agreement_accepted";
 
     private FirebaseAuth auth;
     private FirebaseFirestore FireStoreDB;
-    private FirebaseUser user;
+    private String fid;
+
+    CountDownLatch latch = new CountDownLatch(1);
+
     private String deviceIdConcat;
     private List<DeviceEvent> events;
     private String jsonData;
@@ -106,7 +118,9 @@ public class MainActivity extends Activity {
     private RecyclerView recyclerView;
     private FloatingActionButton button;
     private boolean shouldShowSurvey = false;
+    private boolean shouldShowMonthlySurvey = false;
     private AlertDialog surveyDialog;
+    private AlertDialog SurveyMonthlyDialog;
     private TextView appSelection;
 
     private String[] appNames;
@@ -118,55 +132,61 @@ public class MainActivity extends Activity {
         FirebaseApp.initializeApp(this);
         setContentView(R.layout.activity_main);
 
-        auth = FirebaseAuth.getInstance();
-        user = auth.getCurrentUser();
-
+//        auth = FirebaseAuth.getInstance();
+//        user = auth.getCurrentUser();
+        if (fid == null) {
+            fid = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+        }
         initializeComponents();
 
-        if (user == null) {
-            startActivity(new Intent(this, Login.class));
-            finish();
-        } else {
-            textView.setText("Welcome, " + user.getEmail());
-            setupToolbar();
-            checkUsageStatsPermission();
+        textView.setText("Welcome, Participant");
+        setupToolbar();
+        checkUsageStatsPermission();
 
-            SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        long firstRunDate = settings.getLong(FIRST_RUN_DATE, 0);
+        long currentTime = System.currentTimeMillis();
 
-            button.setOnClickListener(v -> {
-                Toast.makeText(MainActivity.this, "Starting new Experiment", Toast.LENGTH_LONG).show();
-                startActivityForResult(new Intent(this, CreateExperiment.class), CREATE_EXPERIMENT_REQUEST_CODE);
-            });
+        if (firstRunDate == 0) {
+            // Store the first run date
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putLong(FIRST_RUN_DATE, currentTime);
+            editor.putLong(LAST_SURVEY_DATE, currentTime); // Also set the last survey date to now
+            editor.apply();
+        }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    requestNotificationPermission();
-                }
+//        long lastSurveyDate = settings.getLong(LAST_SURVEY_DATE, 0);
+//        long daysSinceLastSurvey = TimeUnit.MILLISECONDS.toMinutes(currentTime - lastSurveyDate);
+//
+//        shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
+//        shouldShowMonthlySurvey = daysSinceLastSurvey >= 1;
+
+        updateSurveyFlags();
+
+        button.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CreateExperiment.class);
+            intent.putExtra("fid", fid);
+            startActivityForResult(intent, CREATE_EXPERIMENT_REQUEST_CODE);
+        });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermission();
             }
         }
+
     }
 
-//    private void populateAppSelection(View surveyLayout) {
-//        PackageManager pm = getPackageManager();
-//        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-//        List<String> appNameList = new ArrayList<>();
-//
-//        for (ApplicationInfo app : apps) {
-//            appNameList.add(pm.getApplicationLabel(app).toString());
-//        }
-//
-//        appNames = appNameList.toArray(new String[0]);
-//        selectedItems = new boolean[appNames.length];
-//
-//        appSelection = surveyLayout.findViewById(R.id.app_selection);
-//        appSelection.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                showMultiSelectDialog();
-//            }
-//        });
-//    }
+    private void updateSurveyFlags() {
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        long lastSurveyDate = settings.getLong(LAST_SURVEY_DATE, 0);
+        long currentTime = System.currentTimeMillis();
+        long daysSinceLastSurvey = TimeUnit.MILLISECONDS.toDays(currentTime - lastSurveyDate);
+
+        shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
+        shouldShowMonthlySurvey = daysSinceLastSurvey >= 30;  // Assuming 30 days for a month
+    }
+
 
     private void populateAppSelection(View surveyLayout) {
         PackageManager pm = getPackageManager();
@@ -231,7 +251,7 @@ public class MainActivity extends Activity {
         appSelection.setText(spannableBuilder);
     }
 
-    private void saveSurveyDetailsToFirestore(List<QuestionAnswer> qa, List<String> selectedApps) {
+    private void saveSurveyDetailsToFirestore(List<QuestionAnswer> qa, List<String> selectedApps, String SurveyType) {
 
         // Set up the date format to use UTC
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
@@ -240,27 +260,44 @@ public class MainActivity extends Activity {
 
         long timestamp = System.currentTimeMillis() / 1000L;
 
-        SurveyDetails surveyDetails = new SurveyDetails(qa, selectedApps, timestamp);
-
         String surveyId = "survey_" + formattedTimestamp;
 
-        FireStoreDB.collection("Devices").document(deviceIdConcat)
-                .collection("surveys").document(surveyId)
-                .set(surveyDetails)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(MainActivity.this, "Survey details saved successfully!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(MainActivity.this, "Failed to save survey details.", Toast.LENGTH_SHORT).show();
-                    Log.e("Firestore", "Error saving survey details", e);
-                });
+        if (SurveyType.equals("launch")){
+            SurveyDetails surveyDetails = new SurveyDetails(qa, selectedApps, timestamp);
+            FireStoreDB.collection("Devices").document(deviceIdConcat)
+                    .collection("launch_surveys").document(surveyId)
+                    .set(surveyDetails)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(MainActivity.this, "Survey details saved successfully!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(MainActivity.this, "Failed to save survey details.", Toast.LENGTH_SHORT).show();
+                        Log.e("Firestore", "Error saving survey details", e);
+                    });
+        } else {
+            MonthlySurvey surveyDetails = new MonthlySurvey(qa, timestamp);
+            FireStoreDB.collection("Devices").document(deviceIdConcat)
+                    .collection("monthly_surveys").document(surveyId)
+                    .set(surveyDetails)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(MainActivity.this, "Survey details saved successfully!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(MainActivity.this, "Failed to save survey details.", Toast.LENGTH_SHORT).show();
+                        Log.e("Firestore", "Error saving survey details", e);
+                    });
+        }
+
+
+
     }
 
     private void showSurveyModal() {
+
         // Inflate the custom layout
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
-        
+
         TextView agreementText = surveyLayout.findViewById(R.id.agreement_details);
         String htmlContent = readHtmlFromFile("agreement_details.html");
         agreementText.setText(HtmlCompat.fromHtml(htmlContent, HtmlCompat.FROM_HTML_MODE_LEGACY));
@@ -338,7 +375,7 @@ public class MainActivity extends Activity {
                 }
             }
 
-            saveSurveyDetailsToFirestore(questionsAndAnswers, selectedApps);
+            saveSurveyDetailsToFirestore(questionsAndAnswers, selectedApps, "launch");
 
             // Mark survey as shown
             SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -369,15 +406,104 @@ public class MainActivity extends Activity {
         return htmlString.toString();
     }
 
+    private void showMonthlySurveyModal() {
+        LayoutInflater inflater = getLayoutInflater();
+        View surveyLayout = inflater.inflate(R.layout.dialog_monthly_survey, null);
+
+        TextView question1 = surveyLayout.findViewById(R.id.question1);
+        TextView question2 = surveyLayout.findViewById(R.id.question2);
+        TextView question3 = surveyLayout.findViewById(R.id.question3);
+        TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
+        TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
+        TextView answer3 = surveyLayout.findViewById(R.id.answer3);
+
+        // Find CheckBoxes
+        TextView checkboxQuestion = surveyLayout.findViewById(R.id.checkbox_question);
+        CheckBox checkboxFocusMode = surveyLayout.findViewById(R.id.checkbox_focus_mode);
+        CheckBox checkboxGrayscaleScreen = surveyLayout.findViewById(R.id.checkbox_grayscale_screen);
+        CheckBox checkboxNotificationsOff = surveyLayout.findViewById(R.id.checkbox_notifications_off);
+        CheckBox checkboxDeletedApps = surveyLayout.findViewById(R.id.checkbox_deleted_apps);
+
+        MaterialButton submitButton = surveyLayout.findViewById(R.id.submit_button);
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(surveyLayout)
+                .setCancelable(false);
+
+        SurveyMonthlyDialog = builder.create();
+
+        submitButton.setOnClickListener(v -> {
+            String question1Text = question1.getText().toString();
+            String answer1Text = answer1.getText().toString();
+            String question2Text = question2.getText().toString();
+            String answer2Text = answer2.getText().toString();
+            String question3Text = question3.getText().toString();
+            String answer3Text = answer3.getText().toString();
+
+            // Get checkbox states
+            String checkboxQuestionText = checkboxQuestion.getText().toString();
+            boolean isFocusModeChecked = checkboxFocusMode.isChecked();
+            boolean isGrayscaleScreenChecked = checkboxGrayscaleScreen.isChecked();
+            boolean areNotificationsOffChecked = checkboxNotificationsOff.isChecked();
+            boolean areDeletedAppsChecked = checkboxDeletedApps.isChecked();
+
+            List<QuestionAnswer> checkboxQuestionAndAnswers = new ArrayList<>();
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Focus Mode: ", String.valueOf(isFocusModeChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Grayscale screen: ", String.valueOf(isGrayscaleScreenChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Notifications off: ", String.valueOf(areNotificationsOffChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Deleted apps: ", String.valueOf(areDeletedAppsChecked)));
+
+            List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
+            questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
+            questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
+            questionsAndAnswers.add(new QuestionAnswer(question3Text, answer3Text));
+            questionsAndAnswers.add(new QuestionAnswer(checkboxQuestionText, checkboxQuestionAndAnswers));
+
+            // Save survey details to Firestore
+            saveSurveyDetailsToFirestore(questionsAndAnswers, null, "monthly");
+
+            // Update the last survey date
+            SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putLong(LAST_SURVEY_DATE, System.currentTimeMillis());
+            editor.apply();
+
+            SurveyMonthlyDialog.dismiss();
+        });
+
+        SurveyMonthlyDialog.show();
+    }
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        updateRunningExperimentDetails();
+//        if (shouldShowSurvey && (surveyDialog == null || !surveyDialog.isShowing())) {
+//            showSurveyModal();
+//        }
+//
+//        if (shouldShowMonthlySurvey && (SurveyMonthlyDialog == null || !SurveyMonthlyDialog.isShowing())) {
+//            showMonthlySurveyModal();
+//        }
+//    }
 
     @Override
     protected void onResume() {
         super.onResume();
         updateRunningExperimentDetails();
+
+        updateSurveyFlags();
+
         if (shouldShowSurvey && (surveyDialog == null || !surveyDialog.isShowing())) {
             showSurveyModal();
         }
+
+        if (shouldShowMonthlySurvey && (SurveyMonthlyDialog == null || !SurveyMonthlyDialog.isShowing())) {
+            showMonthlySurveyModal();
+        }
     }
+
 
     @Override
     protected void onPause() {
@@ -385,11 +511,14 @@ public class MainActivity extends Activity {
         if (surveyDialog != null && surveyDialog.isShowing()) {
             surveyDialog.dismiss();
         }
+        if(SurveyMonthlyDialog !=  null && SurveyMonthlyDialog.isShowing()){
+            SurveyMonthlyDialog.dismiss();
+        }
     }
 
     private void initializeComponents() {
         FireStoreDB = FirebaseFirestore.getInstance();
-        deviceIdConcat = user.getUid() + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
+        deviceIdConcat = fid + "-" + Build.MANUFACTURER + "-" + Build.MODEL.toLowerCase();
         runningExperimentDetailsTextView = findViewById(R.id.running_experiment_details);
         summaryTextView = findViewById(R.id.summaryTextView);
         textView = findViewById(R.id.user_details);
@@ -447,6 +576,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateRunningExperimentDetails() {
+        Log.e("didi", deviceIdConcat);
         FireStoreDB.collection("Devices").document(deviceIdConcat)
                 .collection("experiments")
                 .whereEqualTo("isRunning", true)
@@ -575,19 +705,15 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.menu_logout) {
-            AuthenticationUtils.logoutUser(this);
-            return true;
-        } else if (item.getItemId() == R.id.action_refresh) {
+        if (item.getItemId() == R.id.action_refresh) {
             updateRunningExperimentDetails();
             fetchAndDisplayEvents();
             Toast.makeText(MainActivity.this, "Data refreshed", Toast.LENGTH_SHORT).show();
             return true;
-        } else if (item.getItemId() == R.id.my_account) {
+        }
+        else if (item.getItemId() == R.id.my_account) {
             Intent intent = new Intent(this, MyAccountActivity.class);
-            if (user != null) {
-                intent.putExtra("USER_EMAIL", user.getEmail());
-            }
+            intent.putExtra("deviceIdConcat", deviceIdConcat);
             startActivity(intent);
             return true;
         }

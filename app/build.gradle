@@ -58,7 +58,6 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
-    implementation 'com.google.firebase:firebase-auth:22.3.1'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.annotation:annotation:1.6.0'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
@@ -77,12 +76,14 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.6.2'
 
     // firebase
+    implementation 'com.google.firebase:firebase-auth:22.3.1'
     implementation platform('com.google.firebase:firebase-bom:32.7.2')
     implementation("com.google.firebase:firebase-database")
     implementation 'com.google.firebase:firebase-analytics'
     implementation("com.google.firebase:firebase-firestore")
     implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
     implementation("com.google.firebase:firebase-messaging")
+    implementation 'com.google.firebase:firebase-installations'
 
     // google services
     implementation "androidx.work:work-runtime:2.9.0"

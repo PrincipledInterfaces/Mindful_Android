@@ -6,7 +6,8 @@
     android:gravity="center"
     android:clickable="true"
     android:focusable="true"
-    android:id="@+id/loading_screen">
+    android:id="@+id/loading_screen"
+    android:visibility="gone">
 
     <ProgressBar
         android:id="@+id/progress_bar"
