@@ -257,5 +257,7 @@
                     app:cornerRadius="4dp" />
             </LinearLayout>
         </ScrollView>
+        <!-- Loading Screen Overlay -->
+        <include layout="@layout/loading_screen" />
     </ViewFlipper>
 </LinearLayout>

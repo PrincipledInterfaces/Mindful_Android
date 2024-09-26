@@ -25,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
@@ -126,6 +127,8 @@ public class MainActivity extends Activity {
 
     private String[] appNames;
     private boolean[] selectedItems;
+
+    private View loadingScreen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -299,7 +302,23 @@ public class MainActivity extends Activity {
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
 
+        loadingScreen = surveyLayout.findViewById(R.id.loading_screen);
+
+
         WebView webView = surveyLayout.findViewById(R.id.agreement_details);
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                loadingScreen.setVisibility(View.GONE);
+            }
+        });
+
         String htmlContent = readHtmlFromFile("agreement_details.html");
         webView.loadData(htmlContent, "text/html", "UTF-8");
 
@@ -526,6 +545,15 @@ public class MainActivity extends Activity {
         emptyMessageTextView = findViewById(R.id.empty_message);
         button = findViewById(R.id.new_experiment);
         recyclerView = findViewById(R.id.recyclerView);
+
+//        loadingScreen = findViewById(R.id.loading_screen);
+    }
+    private void showLoadingScreen() {
+        loadingScreen.setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoadingScreen() {
+        loadingScreen.setVisibility(View.GONE);
     }
 
     private void setupToolbar() {
