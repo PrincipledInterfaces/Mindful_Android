@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
@@ -298,9 +299,9 @@ public class MainActivity extends Activity {
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
 
-        TextView agreementText = surveyLayout.findViewById(R.id.agreement_details);
+        WebView webView = surveyLayout.findViewById(R.id.agreement_details);
         String htmlContent = readHtmlFromFile("agreement_details.html");
-        agreementText.setText(HtmlCompat.fromHtml(htmlContent, HtmlCompat.FROM_HTML_MODE_LEGACY));
+        webView.loadData(htmlContent, "text/html", "UTF-8");
 
         ViewFlipper viewFlipper = surveyLayout.findViewById(R.id.view_flipper);
         ImageButton backButton = surveyLayout.findViewById(R.id.back_button);
