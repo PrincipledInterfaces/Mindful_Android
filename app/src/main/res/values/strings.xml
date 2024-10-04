@@ -6,6 +6,7 @@
     <string name="register">Register</string>
     <string name="already_have_an_account_login">Already have an account? Login</string>
     <string name="create_an_account">Create an account</string>
+    <string name="create_experiment">Create Experiment</string>
     <string name="logout">Logout</string>
     <string name="page_title">Dashboard</string>
     <string name="help">Help</string>
@@ -39,6 +40,11 @@
         <item>4 Weeks</item>
         <item>6 Weeks</item>
         <item>8 Weeks</item>
+    </string-array>
+    <string-array name="predefined_exp_options">
+        <item>Do Not Disturb Mode</item>
+        <item>Grayscale Mode</item>
+        <item>Disabling Face ID/Fingerprint ID</item>
     </string-array>
 
 </resources>

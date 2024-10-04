@@ -1,7 +1,9 @@
 package com.example.myapplication;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -23,11 +25,13 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
+import com.example.myapplication.Model.Experiment;
 import com.example.myapplication.Util.AuthenticationUtils;
 import com.example.myapplication.Worker.NotificationWorker;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -35,6 +39,9 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 import androidx.core.view.WindowInsetsCompat;
 import androidx.work.Data;
@@ -43,6 +50,11 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -58,6 +70,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class CreateExperiment extends AppCompatActivity {
+
+    private List<Experiment> experimentsList;
+    private Experiment selectedExperiment;
 
     private FirebaseAuth auth;
     private String fid;
@@ -81,12 +96,23 @@ public class CreateExperiment extends AppCompatActivity {
         setContentView(R.layout.activity_create_experiment);
 
         FireStoreDB = FirebaseFirestore.getInstance();
+        loadExperimentsData();
+
         Intent intent = getIntent();
         if (intent != null) {
             fid = intent.getStringExtra("fid");
-        }
-        else {
-            fid = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+            if (fid == null){
+                fid = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+            }
+
+            int experimentId = intent.getIntExtra("experiment_id", -1);  // -1 is the default if not found
+            if (experimentId == -1) {
+                Log.e("CreateExperiment", "No Predefined Experiment id");
+            } else {
+                if (experimentsList != null && !experimentsList.isEmpty()) {
+                    selectedExperiment = getExperimentById(experimentId);
+                }
+            }
         }
 
         MaterialToolbar toolbar = findViewById(R.id.top_app_toolbar);
@@ -122,11 +148,18 @@ public class CreateExperiment extends AppCompatActivity {
 //        runningSwitch = findViewById(R.id.running_switch);
         loadingScreen = findViewById(R.id.loading_screen);
 
+        if (selectedExperiment != null){
+            setDefaultValues();
+        }
+        else {
+            fetchLastExperiment();
+        }
+
         setDefaultScheduleValue();
         setDefaultDurationValue();
         setHelpDialog();
 
-        fetchLastExperiment();
+
 
         // Button initialization and setOnClickListener
         findViewById(R.id.submit_button).setOnClickListener(new View.OnClickListener() {
@@ -139,11 +172,71 @@ public class CreateExperiment extends AppCompatActivity {
 
     }
 
+    private void setDefaultValues() {
+        experimentTitleInput.setText(selectedExperiment.title);
+        experimentGoalInput.setText(selectedExperiment.goal);
+        stepsTakenInput.setText(android.text.TextUtils.join("\n", selectedExperiment.steps));
+    }
+
+    private void loadExperimentsData() {
+    try {
+        // Open the raw resource
+        InputStream inputStream = getResources().openRawResource(R.raw.predefined_experiments);
+
+        // Use an InputStreamReader to read the file
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        BufferedReader reader = new BufferedReader(inputStreamReader);
+
+        // Read the JSON file into a StringBuilder
+        StringBuilder jsonStringBuilder = new StringBuilder();
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            jsonStringBuilder.append(line);
+        }
+
+        // Log the raw JSON content (optional, for debugging)
+        Log.d("JSON Data", jsonStringBuilder.toString());
+
+        // Now parse the JSON using Gson
+        Type experimentListType = new TypeToken<List<Experiment>>() {}.getType();
+        experimentsList = new Gson().fromJson(jsonStringBuilder.toString(), experimentListType);
+
+        if (experimentsList == null) {
+            Log.e("ErrorJson", "Parsed list is null.");
+        } else {
+            Log.d("Success", "Experiments loaded successfully.");
+        }
+    } catch (Resources.NotFoundException e) {
+        Log.e("ErrorJson", "Resource not found: " + e.getMessage());
+    } catch (IOException e) {
+        Log.e("ErrorJson", "Error reading the file: " + e.getMessage());
+    } catch (JsonSyntaxException e) {
+        Log.e("ErrorJson", "Error parsing JSON: " + e.getMessage());
+    }
+    }
+
+
+    private Experiment getExperimentById(int id) {
+        if (experimentsList == null) {
+            Log.e("Error", "Experiment list is null.");
+            return null;
+        }
+
+        for (Experiment experiment : experimentsList) {
+            if (experiment.id == id) {
+                return experiment;
+            }
+        }
+        return null;  // Return null if no experiment is found with the given ID
+    }
+
+
     private void setHelpDialog() {
         findViewById(R.id.schedule_help).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new AlertDialog.Builder(CreateExperiment.this)
+                new MaterialAlertDialogBuilder(CreateExperiment.this)
                         .setTitle("Help with Scheduling")
                         .setMessage("You'll spend your chosen number of days in each condition. It's crucial to have 'normal' phone use to compare against your usage during the test to see any effects. We'll notify you the evening before and the morning after you need to switch your intervention on or off to keep you on track!")
                         .setPositiveButton(R.string.modal_btn_text, null)
@@ -154,7 +247,7 @@ public class CreateExperiment extends AppCompatActivity {
         findViewById(R.id.duration_help).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new AlertDialog.Builder(CreateExperiment.this)
+                new MaterialAlertDialogBuilder(CreateExperiment.this)
                         .setTitle("Help with Duration")
                         .setMessage("Your test will run for the number of weeks you select. It's crucial to run the test long enough to capture your phone habits both with and without the intervention across all days of the week. This ensures we account for variations in phone usage by day (e.g., Monday, Tuesday). Running the test for several weeks helps us determine that any changes in your phone usage are due to the intervention and not other factors.")
                         .setPositiveButton(R.string.modal_btn_text, null)
@@ -255,13 +348,26 @@ public class CreateExperiment extends AppCompatActivity {
 
     private void showSuccessDialog(boolean isRunning) {
 
+        MaterialAlertDialogBuilder builder;
         AlertDialog dialog;
         if (isRunning) {
-            dialog = new AlertDialog.Builder(CreateExperiment.this)
-                    .setTitle("Experiment Submitted Successfully")
-                    .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.\n\nIf you're ever unsure, you can log into the app to check whether today is a control or intervention day. To end the experiment and stop receiving notifications, simply log into the app and click the cancel button.\n\nGood luck!")
-                    .setPositiveButton(android.R.string.ok, null)
-                    .create();
+            builder = new MaterialAlertDialogBuilder(CreateExperiment.this);
+
+            builder.setTitle("Experiment Submitted Successfully")
+                    .setMessage("Your experiment has begun! Today is a CONTROL DAY, so please refrain from using your intervention. We'll send you notifications whenever it's time to turn your intervention on or off according to your selected schedule.")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Redirect to MainActivity when OK is clicked
+                            Intent intent = new Intent(CreateExperiment.this, MainActivity.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                            finish();
+                        }
+                    })
+                    .setNegativeButton("Cancel", null);
+
+            dialog = builder.create();
 
         } else {
             dialog = new AlertDialog.Builder(CreateExperiment.this)
@@ -541,11 +647,10 @@ public class CreateExperiment extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-//        if (id == R.id.menu_logout) {
-//            AuthenticationUtils.logoutUser(this);
-//            return true;
-//        }
+        if (item.getItemId() == android.R.id.home) {
+            getOnBackPressedDispatcher().onBackPressed();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 }

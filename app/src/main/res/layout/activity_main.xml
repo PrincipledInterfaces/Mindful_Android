@@ -89,11 +89,56 @@
     <!-- New experiment button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/new_experiment"
-        android:src="@drawable/task_add_24"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="32dp"
         android:contentDescription="@string/add_new_experiment"
+        android:src="@drawable/baseline_edit_note_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="16dp"/>
+        app:maxImageSize="36dp" />
+
+<!--    <androidx.constraintlayout.widget.ConstraintLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent">-->
+
+<!--        &lt;!&ndash; Main FAB &ndash;&gt;-->
+<!--        <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--            android:id="@+id/main_fab"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_margin="16dp"-->
+<!--            android:src="@drawable/task_add_24"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            android:contentDescription="Main FAB" />-->
+
+<!--        &lt;!&ndash; First expandable FAB &ndash;&gt;-->
+<!--        <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--            android:id="@+id/new_experiment"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginBottom="80dp"-->
+<!--            android:src="@drawable/ic_help"-->
+<!--            app:layout_constraintBottom_toBottomOf="@id/main_fab"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            android:visibility="gone"-->
+<!--            android:contentDescription="Option 1" />-->
+
+<!--        &lt;!&ndash; Second expandable FAB &ndash;&gt;-->
+<!--        <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--            android:id="@+id/fab_option_2"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginBottom="140dp"-->
+<!--            android:src="@drawable/ic_dropdown_arrow"-->
+<!--            app:layout_constraintBottom_toBottomOf="@id/main_fab"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            android:visibility="gone"-->
+<!--            android:contentDescription="Option 2" />-->
+
+<!--    </androidx.constraintlayout.widget.ConstraintLayout>-->
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
