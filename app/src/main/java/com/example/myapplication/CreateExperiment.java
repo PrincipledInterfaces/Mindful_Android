@@ -1,5 +1,8 @@
 package com.example.myapplication;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,10 +13,13 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -22,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
@@ -76,6 +83,8 @@ public class CreateExperiment extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private String fid;
+
+    private ScrollView mainScrollview;
     private EditText experimentTitleInput;
     private EditText experimentGoalInput;
     private EditText stepsTakenInput;
@@ -89,11 +98,25 @@ public class CreateExperiment extends AppCompatActivity {
     private View loadingScreen;
     private FirebaseFirestore FireStoreDB;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_experiment);
+
+        mainScrollview = findViewById(R.id.main_scrollview);
+
+        // Set a touch listener on the root layout
+        mainScrollview.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // Hide the keyboard if the user touches outside of the EditText
+                hideKeyboard(v);
+                return false;  // Return false to allow the touch event to continue being processed
+            }
+
+        });
 
         FireStoreDB = FirebaseFirestore.getInstance();
         loadExperimentsData();
@@ -133,7 +156,6 @@ public class CreateExperiment extends AppCompatActivity {
         });
 
         if (deviceId == null) {
-//            deviceId = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
             deviceId = fid;
         }
         if (DeviceModel == null) {
@@ -159,8 +181,6 @@ public class CreateExperiment extends AppCompatActivity {
         setDefaultDurationValue();
         setHelpDialog();
 
-
-
         // Button initialization and setOnClickListener
         findViewById(R.id.submit_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -168,8 +188,13 @@ public class CreateExperiment extends AppCompatActivity {
                 submitExperiment();
             }
         });
+    }
 
-
+    public void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     private void setDefaultValues() {
