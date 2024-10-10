@@ -1,0 +1,73 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <include
+        android:id="@+id/app_bar_inc"
+        layout="@layout/toolbar_test"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <LinearLayout
+        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginVertical="40dp"
+        android:layout_marginHorizontal="32dp"
+        android:gravity="top"
+        android:background="?android:attr/windowBackground">
+
+        <TextView
+            android:id="@+id/welcome_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Welcome to the Mindful Monitor"
+            android:textSize="18sp"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginBottom="32dp" />
+        <TextView
+            android:id="@+id/instructions_heading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select a predefined experiment to toggle on intervention days"
+            android:textSize="18sp"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:paddingBottom="32dp" />
+
+        <Spinner
+            android:id="@+id/preDefExpSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:paddingVertical="16dp"
+            android:layout_marginBottom="16dp"
+            android:entries="@array/predefined_exp_options"
+            android:background="@drawable/spinner_background" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/submitButton"
+            style="@style/Widget.MaterialComponents.Button.Icon"
+            app:icon="@drawable/baseline_open_in_new_24"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/create_experiment"
+            app:cornerRadius="8dp"/>
+
+    <!--    <Button-->
+    <!--        android:id="@+id/GrayScaleExperimentButton"-->
+    <!--        style="?attr/materialButtonOutlinedStyle"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:text="Grayscale mode"-->
+    <!--        android:layout_gravity="center_horizontal"-->
+    <!--        android:layout_marginTop="16dp"-->
+    <!--        app:cornerRadius="4dp"/>-->
+
+    </LinearLayout>
+</LinearLayout>

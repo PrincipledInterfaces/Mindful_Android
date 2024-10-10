@@ -24,6 +24,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
@@ -38,6 +40,7 @@ import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.text.HtmlCompat;
@@ -126,14 +129,14 @@ public class MainActivity extends Activity {
     private String[] appNames;
     private boolean[] selectedItems;
 
+    private View loadingScreen;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FirebaseApp.initializeApp(this);
         setContentView(R.layout.activity_main);
 
-//        auth = FirebaseAuth.getInstance();
-//        user = auth.getCurrentUser();
         if (fid == null) {
             fid = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
         }
@@ -164,9 +167,7 @@ public class MainActivity extends Activity {
         updateSurveyFlags();
 
         button.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, CreateExperiment.class);
-            intent.putExtra("fid", fid);
-            startActivityForResult(intent, CREATE_EXPERIMENT_REQUEST_CODE);
+            openActivity(CreateExperiment.class);
         });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -175,6 +176,13 @@ public class MainActivity extends Activity {
             }
         }
 
+    }
+
+    public void openActivity(Class<?> toActivity){
+        Intent intent = new Intent(MainActivity.this, toActivity);
+        intent.putExtra("fid", fid);
+        startActivity(intent);
+//        startActivityForResult(intent, CREATE_EXPERIMENT_REQUEST_CODE);
     }
 
     private void updateSurveyFlags() {
@@ -298,9 +306,25 @@ public class MainActivity extends Activity {
         LayoutInflater inflater = getLayoutInflater();
         View surveyLayout = inflater.inflate(R.layout.dialog_survey, null);
 
-        TextView agreementText = surveyLayout.findViewById(R.id.agreement_details);
+        loadingScreen = surveyLayout.findViewById(R.id.loading_screen);
+
+
+        WebView webView = surveyLayout.findViewById(R.id.agreement_details);
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                loadingScreen.setVisibility(View.GONE);
+            }
+        });
+
         String htmlContent = readHtmlFromFile("agreement_details.html");
-        agreementText.setText(HtmlCompat.fromHtml(htmlContent, HtmlCompat.FROM_HTML_MODE_LEGACY));
+        webView.loadData(htmlContent, "text/html", "UTF-8");
 
         ViewFlipper viewFlipper = surveyLayout.findViewById(R.id.view_flipper);
         ImageButton backButton = surveyLayout.findViewById(R.id.back_button);
@@ -384,7 +408,11 @@ public class MainActivity extends Activity {
             editor.apply();
 
             shouldShowSurvey = false; // Update the flag
+
+
             surveyDialog.dismiss();
+            openActivity(PredefinedExperimentSelectionActivity.class);
+
         });
 
         surveyDialog.show();
@@ -525,11 +553,21 @@ public class MainActivity extends Activity {
         emptyMessageTextView = findViewById(R.id.empty_message);
         button = findViewById(R.id.new_experiment);
         recyclerView = findViewById(R.id.recyclerView);
+
+//        loadingScreen = findViewById(R.id.loading_screen);
+    }
+    private void showLoadingScreen() {
+        loadingScreen.setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoadingScreen() {
+        loadingScreen.setVisibility(View.GONE);
     }
 
     private void setupToolbar() {
         MaterialToolbar toolbar = findViewById(R.id.top_app_toolbar);
         toolbar.setTitle("Dashboard");
+        toolbar.setNavigationIcon(null);
         toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
     }
 
@@ -576,7 +614,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateRunningExperimentDetails() {
-        Log.e("didi", deviceIdConcat);
+
         FireStoreDB.collection("Devices").document(deviceIdConcat)
                 .collection("experiments")
                 .whereEqualTo("isRunning", true)
@@ -716,6 +754,10 @@ public class MainActivity extends Activity {
             intent.putExtra("deviceIdConcat", deviceIdConcat);
             startActivity(intent);
             return true;
+        }
+        else if (item.getItemId() == R.id.help){
+            Intent intent = new Intent(this, PredefinedExperimentSelectionActivity.class);
+            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }

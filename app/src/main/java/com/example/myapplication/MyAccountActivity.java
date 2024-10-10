@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -28,6 +29,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -80,17 +82,52 @@ public class MyAccountActivity extends AppCompatActivity {
         });
     }
 
+//    private void showDeleteAccountDialog() {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle("Delete Account")
+//                .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
+//                .setPositiveButton("Delete", null)
+//                .setNegativeButton("Cancel", null);
+//
+//        AlertDialog dialog = builder.create();
+//        dialog.show();
+//
+//        // Get the "Delete" button
+//        Button deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+//
+//        // Apply padding programmatically
+//        int paddingHorizontal = (int) (16 * getResources().getDisplayMetrics().density); // Convert 16dp to pixels
+//        int paddingVertical = (int) (8 * getResources().getDisplayMetrics().density); // Convert 8dp to pixels
+//        deleteButton.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
+//
+//        // Set the background color programmatically
+//        deleteButton.setBackgroundColor(ContextCompat.getColor(this, R.color.custom_red));
+//        deleteButton.setTextColor(Color.WHITE);
+//
+//        // Set the onClickListener after customization
+//        deleteButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                showLoadingScreen();
+//                deleteUserAccount();
+//                dialog.dismiss();
+//            }
+//        });
+//    }
+
     private void showDeleteAccountDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        // Use MaterialAlertDialogBuilder instead of AlertDialog.Builder
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
+
         builder.setTitle("Delete Account")
                 .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
-                .setPositiveButton("Delete", null)
+                .setPositiveButton("Delete", null)  // We'll customize this button after the dialog is shown
                 .setNegativeButton("Cancel", null);
 
         AlertDialog dialog = builder.create();
         dialog.show();
 
-        // Get the "Delete" button
+        // Get the "Delete" button after the dialog is shown
         Button deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
 
         // Apply padding programmatically
@@ -99,8 +136,8 @@ public class MyAccountActivity extends AppCompatActivity {
         deleteButton.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
 
         // Set the background color programmatically
-        deleteButton.setBackgroundColor(ContextCompat.getColor(this, R.color.custom_red));
-        deleteButton.setTextColor(Color.WHITE);
+        deleteButton.setBackgroundColor(ContextCompat.getColor(this, R.color.custom_red));  // Your custom color
+        deleteButton.setTextColor(Color.WHITE);  // Set text color to white
 
         // Set the onClickListener after customization
         deleteButton.setOnClickListener(new View.OnClickListener() {
@@ -112,7 +149,6 @@ public class MyAccountActivity extends AppCompatActivity {
             }
         });
     }
-
 
     private void showLoadingScreen() {
         loadingScreen.setVisibility(View.VISIBLE);
@@ -227,5 +263,14 @@ public class MyAccountActivity extends AppCompatActivity {
 
         // Close the application
         finishAffinity();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            getOnBackPressedDispatcher().onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

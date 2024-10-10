@@ -9,6 +9,15 @@
     <!-- PopupOverlay style for the Toolbar -->
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="AlertDialogButtonStyle" parent="Widget.MaterialComponents.Button">
+<!--        <item name="android:textColor">#FF5722</item> &lt;!&ndash; Set your desired button color here &ndash;&gt;-->
+    </style>
+
+    <!-- Apply this button style to AlertDialogs -->
+    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="buttonBarPositiveButtonStyle">@style/AlertDialogButtonStyle</item>
+    </style>
+
     <style name="CustomTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxStrokeColor">#FF0000</item> <!-- Border color -->
         <item name="boxStrokeWidth">2dp</item> <!-- Border width -->
