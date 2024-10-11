@@ -85,6 +85,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -195,7 +196,6 @@ public class MainActivity extends Activity {
         shouldShowMonthlySurvey = daysSinceLastSurvey >= 30;  // Assuming 30 days for a month
     }
 
-
     private void populateAppSelection(View surveyLayout) {
         PackageManager pm = getPackageManager();
         Intent socialMediaIntent = new Intent(Intent.ACTION_SEND);
@@ -224,23 +224,42 @@ public class MainActivity extends Activity {
         });
     }
 
-
     private void showMultiSelectDialog() {
-        new MaterialAlertDialogBuilder(this)
+        final boolean[] tempSelectedItems = selectedItems.clone();
+        new AlertDialog.Builder(this)
                 .setTitle("Select Apps")
-                .setMultiChoiceItems(appNames, selectedItems, new DialogInterface.OnMultiChoiceClickListener() {
+                .setMultiChoiceItems(appNames, tempSelectedItems, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int indexSelected, boolean isChecked) {
-                        selectedItems[indexSelected] = isChecked;
+//                        selectedItems[indexSelected] = isChecked;
+                        tempSelectedItems[indexSelected] = isChecked;
                     }
                 })
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
+                        System.arraycopy(tempSelectedItems, 0, selectedItems, 0, tempSelectedItems.length);
                         updateSelectedItemsText();
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }})
+                .setNeutralButton("Clear All", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Clear all selections
+//                        for (int i = 0; i < selectedItems.length; i++) {
+//                            selectedItems[i] = false;
+//                        }
+                        for (int i = 0; i < tempSelectedItems.length; i++) {
+                            tempSelectedItems[i] = false;
+                        }
+                        appSelection.setText("");
+                    }
+                })
                 .show();
     }
 
@@ -249,7 +268,7 @@ public class MainActivity extends Activity {
         for (int i = 0; i < appNames.length; i++) {
             if (selectedItems[i]) {
                 SpannableString spannablePart = new SpannableString(appNames[i]);
-                spannablePart.setSpan(new ForegroundColorSpan(Color.BLUE), 0, appNames[i].length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                spannablePart.setSpan(new ForegroundColorSpan(Color.GRAY), 0, appNames[i].length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 if (spannableBuilder.length() > 0) {
                     spannableBuilder.append(", ");
                 }
