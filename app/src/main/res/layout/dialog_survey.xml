@@ -34,7 +34,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Agreement Terms"
+            android:text="Consent Form"
             android:textSize="20sp"
             android:gravity="center" />
 
@@ -139,111 +139,117 @@
                     android:drawableEnd="@android:drawable/arrow_down_float"
                     android:drawablePadding="16dp"
                     android:hint="@string/select_applications"
-                    android:padding="12dp"
-                    android:layout_marginBottom="16dp"/>
+                    android:padding="12dp" />
 
-                <TextView
-                    android:id="@+id/likert_question"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/experiments_recycler_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="How willing are you to implement this intervention? (1-5)"
-                    android:textSize="18sp"
-                    android:paddingBottom="8dp" />
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"/>
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+<!--                <TextView-->
+<!--                    android:id="@+id/likert_question"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="How willing are you to implement this intervention? (1-5)"-->
+<!--                    android:textSize="18sp"-->
+<!--                    android:paddingBottom="8dp" />-->
 
-                    <SeekBar
-                        android:id="@+id/likert_seekbar"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:max="4"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/seekbar_progress"
-                        android:thumb="@drawable/seekbar_thumb"
-                        android:splitTrack="false"
-                        android:minHeight="8dp"
-                        android:maxHeight="8dp"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+<!--                <androidx.constraintlayout.widget.ConstraintLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content">-->
 
-                    <TextView
-                        android:id="@+id/label_left"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Very Unwilling"
-                        android:textSize="16sp"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
-                        android:paddingTop="8dp" />
+<!--                    <SeekBar-->
+<!--                        android:id="@+id/likert_seekbar"-->
+<!--                        android:layout_width="0dp"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:max="4"-->
+<!--                        android:progress="0"-->
+<!--                        android:progressDrawable="@drawable/seekbar_progress"-->
+<!--                        android:thumb="@drawable/seekbar_thumb"-->
+<!--                        android:splitTrack="false"-->
+<!--                        android:minHeight="8dp"-->
+<!--                        android:maxHeight="8dp"-->
+<!--                        app:layout_constraintStart_toStartOf="parent"-->
+<!--                        app:layout_constraintEnd_toEndOf="parent"-->
+<!--                        app:layout_constraintTop_toTopOf="parent" />-->
 
-                    <TextView
-                        android:id="@+id/label_right"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Very Willing"
-                        android:textSize="16sp"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/likert_seekbar"
-                        android:paddingTop="8dp" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
+<!--                    <TextView-->
+<!--                        android:id="@+id/label_left"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:text="Very Unwilling"-->
+<!--                        android:textSize="16sp"-->
+<!--                        app:layout_constraintStart_toStartOf="parent"-->
+<!--                        app:layout_constraintTop_toBottomOf="@id/likert_seekbar"-->
+<!--                        android:paddingTop="8dp" />-->
 
-                <TextView
-                    android:id="@+id/question2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="What behaviors would you like to reduce or improve?"
-                    android:textSize="18sp"
-                    android:layout_marginTop="16dp"
-                    android:paddingBottom="10dp" />
+<!--                    <TextView-->
+<!--                        android:id="@+id/label_right"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:text="Very Willing"-->
+<!--                        android:textSize="16sp"-->
+<!--                        app:layout_constraintEnd_toEndOf="parent"-->
+<!--                        app:layout_constraintTop_toBottomOf="@id/likert_seekbar"-->
+<!--                        android:paddingTop="8dp" />-->
+<!--                </androidx.constraintlayout.widget.ConstraintLayout>-->
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+<!--                <TextView-->
+<!--                    android:id="@+id/question2"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="What behaviors would you like to reduce or improve?"-->
+<!--                    android:textSize="18sp"-->
+<!--                    android:layout_marginTop="16dp"-->
+<!--                    android:paddingBottom="10dp" />-->
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/answer2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textShortMessage|textMultiLine"
-                        android:hint="Answer here..."
-                        android:padding="12dp"
-                        android:textColor="?android:textColorPrimary"
-                        android:textSize="16sp"
-                        android:gravity="top"
-                        android:minLines="2"
-                        android:maxLines="2"
-                        android:scrollbars="vertical" />
-                </com.google.android.material.textfield.TextInputLayout>
+<!--                <com.google.android.material.textfield.TextInputLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content">-->
 
-                <TextView
-                    android:id="@+id/question1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="How big of an influence do you believe this would have on your behavior?"
-                    android:textSize="18sp"
-                    android:paddingBottom="10dp" />
+<!--                    <com.google.android.material.textfield.TextInputEditText-->
+<!--                        android:id="@+id/answer2"-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:inputType="textShortMessage|textMultiLine"-->
+<!--                        android:hint="Answer here..."-->
+<!--                        android:padding="12dp"-->
+<!--                        android:textColor="?android:textColorPrimary"-->
+<!--                        android:textSize="16sp"-->
+<!--                        android:gravity="top"-->
+<!--                        android:minLines="2"-->
+<!--                        android:maxLines="2"-->
+<!--                        android:scrollbars="vertical" />-->
+<!--                </com.google.android.material.textfield.TextInputLayout>-->
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+<!--                <TextView-->
+<!--                    android:id="@+id/question1"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="How big of an influence do you believe this would have on your behavior?"-->
+<!--                    android:textSize="18sp"-->
+<!--                    android:paddingBottom="10dp" />-->
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/answer1"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textShortMessage|textMultiLine"
-                        android:hint="Answer here..."
-                        android:padding="12dp"
-                        android:textColor="?android:textColorPrimary"
-                        android:textSize="16sp"
-                        android:gravity="top"
-                        android:minLines="2"
-                        android:maxLines="2"
-                        android:scrollbars="vertical" />
-                </com.google.android.material.textfield.TextInputLayout>
+<!--                <com.google.android.material.textfield.TextInputLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content">-->
+
+<!--                    <com.google.android.material.textfield.TextInputEditText-->
+<!--                        android:id="@+id/answer1"-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:inputType="textShortMessage|textMultiLine"-->
+<!--                        android:hint="Answer here..."-->
+<!--                        android:padding="12dp"-->
+<!--                        android:textColor="?android:textColorPrimary"-->
+<!--                        android:textSize="16sp"-->
+<!--                        android:gravity="top"-->
+<!--                        android:minLines="2"-->
+<!--                        android:maxLines="2"-->
+<!--                        android:scrollbars="vertical" />-->
+<!--                </com.google.android.material.textfield.TextInputLayout>-->
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/submit_button"
