@@ -33,5 +33,18 @@ public class LaunchSurveyResponse {
     public int getConfidence() {
         return confidence;
     }
+
+    // setters
+    public void setWillingness(int w){
+        this.willingness = w;
+    }
+
+    public void setImpact(int i) {
+        this.impact = i;
+    }
+
+    public void setConfidence(int c){
+        this.confidence = c;
+    }
 }
 

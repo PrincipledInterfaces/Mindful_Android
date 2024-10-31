@@ -76,12 +76,13 @@ public class ExperimentSurveyAdapter extends RecyclerView.Adapter<ExperimentSurv
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     willingness = progress + 1;
-                    responseList.set(getAdapterPosition(), new LaunchSurveyResponse(
-                            experiment.getTitle(),
-                            willingness,
-                            response.getImpact(),
-                            response.getConfidence()
-                    ));
+                    response.setWillingness(progress + 1);
+//                    responseList.set(getAdapterPosition(), new LaunchSurveyResponse(
+//                            experiment.getTitle(),
+//                            willingness,
+//                            response.getImpact(),
+//                            response.getConfidence()
+//                    ));
                 }
 
                 @Override
@@ -95,12 +96,13 @@ public class ExperimentSurveyAdapter extends RecyclerView.Adapter<ExperimentSurv
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     impact = progress + 1;
-                    responseList.set(getAdapterPosition(), new LaunchSurveyResponse(
-                            experiment.getTitle(),
-                            response.getWillingness(),
-                            impact,
-                            response.getConfidence()
-                    ));
+                    response.setImpact(progress + 1);
+//                    responseList.set(getAdapterPosition(), new LaunchSurveyResponse(
+//                            experiment.getTitle(),
+//                            response.getWillingness(),
+//                            impact,
+//                            response.getConfidence()
+//                    ));
                 }
 
                 @Override
@@ -114,12 +116,13 @@ public class ExperimentSurveyAdapter extends RecyclerView.Adapter<ExperimentSurv
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     confidence = progress + 1;
-                    responseList.set(getAdapterPosition(), new LaunchSurveyResponse(
-                            experiment.getTitle(),
-                            response.getWillingness(),
-                            response.getImpact(),
-                            confidence
-                    ));
+                    response.setConfidence(progress + 1);
+//                    responseList.set(getAdapterPosition(), new LaunchSurveyResponse(
+//                            experiment.getTitle(),
+//                            response.getWillingness(),
+//                            response.getImpact(),
+//                            confidence
+//                    ));
                 }
 
                 @Override
