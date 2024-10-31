@@ -397,13 +397,6 @@ public class MainActivity extends Activity {
             // Create a list of QuestionAnswer objects
             List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
 
-//            for (LaunchSurveyResponse response : updatedResponses) {
-//                List<QuestionAnswer> likertQuestionAnswers = new ArrayList<>();
-//                likertQuestionAnswers.add(new QuestionAnswer("Willingness", String.valueOf(response.getWillingness())));
-//                likertQuestionAnswers.add(new QuestionAnswer("Impact", String.valueOf(response.getImpact())));
-//                likertQuestionAnswers.add(new QuestionAnswer("Confidence", String.valueOf(response.getConfidence())));
-//                questionsAndAnswers.add(new QuestionAnswer(response.getExperimentTitle(), likertQuestionAnswers ));
-//            }
             for (LaunchSurveyResponse response : updatedResponses) {
                 if (response != null) {
                     List<QuestionAnswer> likertQuestionAnswers = new ArrayList<>();
