@@ -49,7 +49,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication.Adapter.DeviceEventAdapter;
 import com.example.myapplication.Adapter.MultiSelectAdapter;
+import com.example.myapplication.Adapter.Survey.ExperimentSurveyAdapter;
 import com.example.myapplication.Model.DeviceEvent;
+import com.example.myapplication.Model.Experiment;
+import com.example.myapplication.Model.Survey.LaunchSurveyResponse;
 import com.example.myapplication.Model.Survey.MonthlySurvey;
 import com.example.myapplication.Model.Survey.QuestionAnswer;
 import com.example.myapplication.Model.SurveyDetails;
@@ -58,6 +61,7 @@ import com.example.myapplication.Service.AppUsageService;
 import com.example.myapplication.Service.DeviceEventService;
 import com.example.myapplication.Util.AuthenticationUtils;
 import com.example.myapplication.Util.FirebaseUtils;
+import com.example.myapplication.utils.Utils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -85,6 +89,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -131,6 +136,8 @@ public class MainActivity extends Activity {
 
     private View loadingScreen;
 
+    private List<Experiment> experimentList;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -157,12 +164,6 @@ public class MainActivity extends Activity {
             editor.putLong(LAST_SURVEY_DATE, currentTime); // Also set the last survey date to now
             editor.apply();
         }
-
-//        long lastSurveyDate = settings.getLong(LAST_SURVEY_DATE, 0);
-//        long daysSinceLastSurvey = TimeUnit.MILLISECONDS.toMinutes(currentTime - lastSurveyDate);
-//
-//        shouldShowSurvey = !settings.getBoolean(SURVEY_SHOWN, false);
-//        shouldShowMonthlySurvey = daysSinceLastSurvey >= 1;
 
         updateSurveyFlags();
 
@@ -195,7 +196,6 @@ public class MainActivity extends Activity {
         shouldShowMonthlySurvey = daysSinceLastSurvey >= 30;  // Assuming 30 days for a month
     }
 
-
     private void populateAppSelection(View surveyLayout) {
         PackageManager pm = getPackageManager();
         Intent socialMediaIntent = new Intent(Intent.ACTION_SEND);
@@ -224,23 +224,38 @@ public class MainActivity extends Activity {
         });
     }
 
-
     private void showMultiSelectDialog() {
-        new MaterialAlertDialogBuilder(this)
+        final boolean[] tempSelectedItems = selectedItems.clone();
+        new AlertDialog.Builder(this)
                 .setTitle("Select Apps")
-                .setMultiChoiceItems(appNames, selectedItems, new DialogInterface.OnMultiChoiceClickListener() {
+                .setMultiChoiceItems(appNames, tempSelectedItems, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int indexSelected, boolean isChecked) {
-                        selectedItems[indexSelected] = isChecked;
+//                        selectedItems[indexSelected] = isChecked;
+                        tempSelectedItems[indexSelected] = isChecked;
                     }
                 })
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
+                        System.arraycopy(tempSelectedItems, 0, selectedItems, 0, tempSelectedItems.length);
                         updateSelectedItemsText();
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }})
+                .setNeutralButton("Clear All", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        for (int i = 0; i < selectedItems.length; i++) {
+                            selectedItems[i] = false;
+                        }
+                        appSelection.setText("");
+                    }
+                })
                 .show();
     }
 
@@ -249,7 +264,7 @@ public class MainActivity extends Activity {
         for (int i = 0; i < appNames.length; i++) {
             if (selectedItems[i]) {
                 SpannableString spannablePart = new SpannableString(appNames[i]);
-                spannablePart.setSpan(new ForegroundColorSpan(Color.BLUE), 0, appNames[i].length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                spannablePart.setSpan(new ForegroundColorSpan(Color.GRAY), 0, appNames[i].length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 if (spannableBuilder.length() > 0) {
                     spannableBuilder.append(", ");
                 }
@@ -308,6 +323,7 @@ public class MainActivity extends Activity {
 
         loadingScreen = surveyLayout.findViewById(R.id.loading_screen);
 
+        RecyclerView recyclerViewExperiments = surveyLayout.findViewById(R.id.experiments_recycler_view);
 
         WebView webView = surveyLayout.findViewById(R.id.agreement_details);
 
@@ -326,6 +342,17 @@ public class MainActivity extends Activity {
         String htmlContent = readHtmlFromFile("agreement_details.html");
         webView.loadData(htmlContent, "text/html", "UTF-8");
 
+        experimentList = Utils.loadExperimentsData(this);
+
+        List<LaunchSurveyResponse> responseList = new ArrayList<>();
+        for (Experiment experiment : experimentList) {
+            responseList.add(new LaunchSurveyResponse(experiment.getTitle(), 3, 3, 3));  // Default willingness, impact, confidence
+        }
+
+        recyclerViewExperiments.setLayoutManager(new LinearLayoutManager(this));
+        ExperimentSurveyAdapter adapter = new ExperimentSurveyAdapter(experimentList, responseList);
+        recyclerViewExperiments.setAdapter(adapter);
+
         ViewFlipper viewFlipper = surveyLayout.findViewById(R.id.view_flipper);
         ImageButton backButton = surveyLayout.findViewById(R.id.back_button);
         ImageButton forwardButton = surveyLayout.findViewById(R.id.forward_button);
@@ -338,7 +365,7 @@ public class MainActivity extends Activity {
         // Populate the app selection
         populateAppSelection(surveyLayout);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
         builder.setView(surveyLayout)
                 .setCancelable(false);
 
@@ -346,7 +373,7 @@ public class MainActivity extends Activity {
 
         backButton.setOnClickListener(v -> {
             viewFlipper.showPrevious();
-            dialogTitle.setText("Agreement Terms");
+            dialogTitle.setText("Consent Form");
             backButton.setVisibility(View.GONE);
             forwardButton.setVisibility(View.VISIBLE);
         });
@@ -365,31 +392,32 @@ public class MainActivity extends Activity {
         });
 
         submitButton.setOnClickListener(v -> {
-
-            // Handle survey submission here
-            TextView question1 = surveyLayout.findViewById(R.id.question1);
-            TextView question2 = surveyLayout.findViewById(R.id.question2);
-            TextView likertQuestion = surveyLayout.findViewById(R.id.likert_question);
-
-            // Retrieve answer TextInputEditText elements
-            TextInputEditText answer1 = surveyLayout.findViewById(R.id.answer1);
-            TextInputEditText answer2 = surveyLayout.findViewById(R.id.answer2);
-
-            SeekBar likertSeekBar = surveyLayout.findViewById(R.id.likert_seekbar);
-
-            // Get the text from the views
-            String question1Text = question1.getText().toString();
-            String answer1Text = answer1.getText().toString();
-            String question2Text = question2.getText().toString();
-            String answer2Text = answer2.getText().toString();
-
-            int seekBarValue = likertSeekBar.getProgress() + 1;
+            List<LaunchSurveyResponse> updatedResponses = adapter.getResponses();
 
             // Create a list of QuestionAnswer objects
             List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
-            questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));
-            questionsAndAnswers.add(new QuestionAnswer(question2Text, answer2Text));
-            questionsAndAnswers.add(new QuestionAnswer(likertQuestion.getText().toString(), String.valueOf(seekBarValue)));
+
+            for (LaunchSurveyResponse response : updatedResponses) {
+                if (response != null) {
+                    List<QuestionAnswer> likertQuestionAnswers = new ArrayList<>();
+
+                    // Add only non-null, valid responses for Willingness, Impact, and Confidence
+                    if (response.getWillingness() != 0) {
+                        likertQuestionAnswers.add(new QuestionAnswer("Willingness", String.valueOf(response.getWillingness())));
+                    }
+                    if (response.getImpact() != 0) {
+                        likertQuestionAnswers.add(new QuestionAnswer("Impact", String.valueOf(response.getImpact())));
+                    }
+                    if (response.getConfidence() != 0) {
+                        likertQuestionAnswers.add(new QuestionAnswer("Confidence", String.valueOf(response.getConfidence())));
+                    }
+
+                    // Add the experiment title and likertQuestionAnswers only if they are not empty
+                    if (!likertQuestionAnswers.isEmpty()) {
+                        questionsAndAnswers.add(new QuestionAnswer(response.getExperimentTitle(), likertQuestionAnswers));
+                    }
+                }
+            }
 
             // Collect selected apps
             List<String> selectedApps = new ArrayList<>();

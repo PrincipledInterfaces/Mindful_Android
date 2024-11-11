@@ -21,26 +21,33 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
+        android:layout_marginBottom="16dp"
         app:layout_constraintTop_toBottomOf="@id/app_bar_inc"
         app:layout_constraintBottom_toBottomOf="parent">
             <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/scrollable_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:background="@android:color/white"
             tools:context=".CreateExperiment">
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/what_is_experiment"
-            android:textColor="?android:textColorPrimary"
-            android:textSize="18sp"
-            android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"  />
+                <TextView
+                    android:id="@+id/textView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Welcome to the Experiment Creation Screen! You can create a personalized experiment to help you track and manage your interventions. Set up the experiment by giving it a title, defining its purpose, and setting the schedule and duration. Once created, the app will send you reminders and notifications based on your schedule to help you stay on track with your intervention goals. Customize each field, and the app will guide you through your experiment at your chosen intervals!"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:lineSpacingExtra="4dp"
+                    android:gravity="center_horizontal"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/textInputLayoutTitle"
@@ -48,9 +55,7 @@
                     android:inputType="text"
                     android:layout_height="wrap_content"
                     android:minHeight="48dp"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_marginTop="8dp"
                     app:layout_constraintTop_toBottomOf="@+id/textView"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -79,9 +84,7 @@
                     android:id="@+id/textInputLayoutGoal"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:layout_marginEnd="16dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/textInputLayoutTitle"
@@ -115,9 +118,7 @@
                     android:id="@+id/textInputLayoutSteps"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:layout_marginEnd="16dp"
                     app:endIconMode="clear_text"
                     app:layout_constraintTop_toBottomOf="@id/textInputLayoutGoal"
                     app:layout_constraintStart_toStartOf="parent"
@@ -141,7 +142,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
                     android:padding="4dp"
                     android:background="?attr/selectableItemBackground"
@@ -174,9 +174,7 @@
                 android:id="@+id/schedule_spinner"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:layout_marginStart="16dp"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="16dp"
                 android:entries="@array/schedule_options"
                 android:background="@drawable/spinner_background"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -188,7 +186,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
                     android:padding="4dp"
                     android:background="?attr/selectableItemBackground"
@@ -219,9 +216,7 @@
             android:id="@+id/duration_spinner"
             android:layout_width="0dp"
             android:layout_height="48dp"
-            android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="16dp"
             android:entries="@array/duration_options"
             android:background="@drawable/spinner_background"
             app:layout_constraintEnd_toEndOf="parent"
@@ -269,17 +264,6 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/running_container"
                     app:cornerRadius="4dp"/>
-
-
-                <!--        <include-->
-<!--            android:id="@+id/date_time_layout"-->
-<!--            layout="@layout/date_time_picker"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            app:layout_constraintTop_toBottomOf="@id/running_container"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"/>-->
-
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>

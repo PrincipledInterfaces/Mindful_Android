@@ -15,4 +15,12 @@ public class Experiment {
         this.goal = goal;
         this.steps = steps;
     }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public int getId() {
+        return id;
+    }
 }

@@ -2,11 +2,9 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -18,7 +16,6 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -33,35 +30,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
 import com.example.myapplication.Model.Experiment;
-import com.example.myapplication.Util.AuthenticationUtils;
 import com.example.myapplication.Worker.NotificationWorker;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.example.myapplication.utils.Utils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
+
 
 import androidx.core.view.WindowInsetsCompat;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -119,7 +106,7 @@ public class CreateExperiment extends AppCompatActivity {
         });
 
         FireStoreDB = FirebaseFirestore.getInstance();
-        loadExperimentsData();
+        experimentsList = Utils.loadExperimentsData(this);
 
         Intent intent = getIntent();
         if (intent != null) {
@@ -203,43 +190,43 @@ public class CreateExperiment extends AppCompatActivity {
         stepsTakenInput.setText(android.text.TextUtils.join("\n", selectedExperiment.steps));
     }
 
-    private void loadExperimentsData() {
-    try {
-        // Open the raw resource
-        InputStream inputStream = getResources().openRawResource(R.raw.predefined_experiments);
-
-        // Use an InputStreamReader to read the file
-        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-        BufferedReader reader = new BufferedReader(inputStreamReader);
-
-        // Read the JSON file into a StringBuilder
-        StringBuilder jsonStringBuilder = new StringBuilder();
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-            jsonStringBuilder.append(line);
-        }
-
-        // Log the raw JSON content (optional, for debugging)
-        Log.d("JSON Data", jsonStringBuilder.toString());
-
-        // Now parse the JSON using Gson
-        Type experimentListType = new TypeToken<List<Experiment>>() {}.getType();
-        experimentsList = new Gson().fromJson(jsonStringBuilder.toString(), experimentListType);
-
-        if (experimentsList == null) {
-            Log.e("ErrorJson", "Parsed list is null.");
-        } else {
-            Log.d("Success", "Experiments loaded successfully.");
-        }
-    } catch (Resources.NotFoundException e) {
-        Log.e("ErrorJson", "Resource not found: " + e.getMessage());
-    } catch (IOException e) {
-        Log.e("ErrorJson", "Error reading the file: " + e.getMessage());
-    } catch (JsonSyntaxException e) {
-        Log.e("ErrorJson", "Error parsing JSON: " + e.getMessage());
-    }
-    }
+//    private void loadExperimentsData() {
+//    try {
+//        // Open the raw resource
+//        InputStream inputStream = getResources().openRawResource(R.raw.predefined_experiments);
+//
+//        // Use an InputStreamReader to read the file
+//        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+//        BufferedReader reader = new BufferedReader(inputStreamReader);
+//
+//        // Read the JSON file into a StringBuilder
+//        StringBuilder jsonStringBuilder = new StringBuilder();
+//        String line;
+//
+//        while ((line = reader.readLine()) != null) {
+//            jsonStringBuilder.append(line);
+//        }
+//
+//        // Log the raw JSON content (optional, for debugging)
+//        Log.d("JSON Data", jsonStringBuilder.toString());
+//
+//        // Now parse the JSON using Gson
+//        Type experimentListType = new TypeToken<List<Experiment>>() {}.getType();
+//        experimentsList = new Gson().fromJson(jsonStringBuilder.toString(), experimentListType);
+//
+//        if (experimentsList == null) {
+//            Log.e("ErrorJson", "Parsed list is null.");
+//        } else {
+//            Log.d("Success", "Experiments loaded successfully.");
+//        }
+//    } catch (Resources.NotFoundException e) {
+//        Log.e("ErrorJson", "Resource not found: " + e.getMessage());
+//    } catch (IOException e) {
+//        Log.e("ErrorJson", "Error reading the file: " + e.getMessage());
+//    } catch (JsonSyntaxException e) {
+//        Log.e("ErrorJson", "Error parsing JSON: " + e.getMessage());
+//    }
+//    }
 
 
     private Experiment getExperimentById(int id) {

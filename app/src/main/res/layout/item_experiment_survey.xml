@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/experiment_item_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_marginBottom="8dp">
+
+    <!-- Experiment Title -->
+    <TextView
+        android:id="@+id/experiment_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Experiment Title"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:paddingBottom="4dp" />
+
+    <!-- Survey Questions for the Experiment -->
+
+    <!-- 1. Willingness to Implement -->
+    <TextView
+        android:id="@+id/question_willingness"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="How willing are you to implement this intervention?"
+        android:textSize="16sp"
+        android:paddingBottom="4dp" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <SeekBar
+                android:id="@+id/seekbar_willingness"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:max="4"
+                android:progress="2"
+                android:progressDrawable="@drawable/seekbar_progress"
+                android:thumb="@drawable/seekbar_thumb"
+                android:splitTrack="false"
+                android:minHeight="10dp"
+                android:maxHeight="10dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/label_willingness_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Very Unwilling"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/seekbar_willingness"
+                android:paddingTop="8dp" />
+
+            <TextView
+                android:id="@+id/label_willingness_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Very Willing"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/seekbar_willingness"
+                android:paddingTop="8dp" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 2. Perceived Impact -->
+    <TextView
+        android:id="@+id/question_impact"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="How much do you think this intervention will impact your behavior?"
+        android:textSize="16sp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <SeekBar
+            android:id="@+id/seekbar_impact"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:max="4"
+            android:progress="2"
+            android:progressDrawable="@drawable/seekbar_progress"
+            android:thumb="@drawable/seekbar_thumb"
+            android:splitTrack="false"
+            android:minHeight="10dp"
+            android:maxHeight="10dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/label_impact_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Impact"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/seekbar_impact"
+            android:paddingTop="8dp" />
+
+        <TextView
+            android:id="@+id/label_impact_right"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Very Significant Impact"
+            android:textSize="14sp"
+            android:gravity="end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/seekbar_impact"
+            android:paddingTop="8dp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 3. Confidence in Ability -->
+    <TextView
+        android:id="@+id/question_confidence"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="How confident are you in your ability to consistently perform this intervention?"
+        android:textSize="16sp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <SeekBar
+            android:id="@+id/seekbar_confidence"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:max="4"
+            android:progress="2"
+            android:progressDrawable="@drawable/seekbar_progress"
+            android:thumb="@drawable/seekbar_thumb"
+            android:splitTrack="false"
+            android:minHeight="10dp"
+            android:maxHeight="10dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/label_confidence_left"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Not Confident at All"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/seekbar_confidence"
+            android:paddingTop="8dp" />
+
+        <TextView
+            android:id="@+id/label_confidence_right"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Extremely Confident"
+            android:textSize="14sp"
+            android:gravity="end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/seekbar_confidence"
+            android:paddingTop="8dp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
