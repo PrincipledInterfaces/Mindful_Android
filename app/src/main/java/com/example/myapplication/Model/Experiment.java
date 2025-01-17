@@ -8,12 +8,22 @@ public class Experiment {
     public String goal;   // Goal of the experiment
     public List<String> steps;  // List of steps for the experiment
 
+    public int reduceOverallTime;
+    public int reduceAppTime;
+    public int reduceUnlockTime;
+    public int reduceCheckFrequency;
+
     // Optionally, add a constructor for easier object creation
-    public Experiment(int id, String title, String goal, List<String> steps) {
+    public Experiment(int id, String title, String goal, List<String> steps, int reduceOverallTime, int reduceAppTime, int reduceUnlockTime, int reduceCheckFrequency) {
         this.id = id;
         this.title = title;
         this.goal = goal;
         this.steps = steps;
+
+        this.reduceOverallTime = reduceOverallTime;
+        this.reduceAppTime = reduceAppTime;
+        this.reduceUnlockTime = reduceUnlockTime;
+        this.reduceCheckFrequency = reduceCheckFrequency;
     }
 
     public String getTitle() {
