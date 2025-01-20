@@ -16,6 +16,8 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -33,8 +35,10 @@ import com.example.myapplication.Model.Experiment;
 import com.example.myapplication.Worker.NotificationWorker;
 import com.example.myapplication.utils.Utils;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -44,6 +48,8 @@ import com.google.firebase.firestore.Query;
 
 
 import androidx.core.view.WindowInsetsCompat;
+import androidx.transition.AutoTransition;
+import androidx.transition.TransitionManager;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
@@ -75,6 +81,16 @@ public class CreateExperiment extends AppCompatActivity {
     private EditText experimentTitleInput;
     private EditText experimentGoalInput;
     private EditText stepsTakenInput;
+
+    private MaterialCardView expectationsCard;
+    private LinearLayout expectationsHeader;
+    private LinearLayout expectationsContent;
+    private ImageView expandIcon;
+
+    private TextInputEditText reduceOverallTimeInput;
+    private TextInputEditText reduceAppTimeInput;
+    private TextInputEditText reduceUnlockTimeInput;
+    private TextInputEditText reduceCheckFrequencyInput;
 
     private Spinner scheduleSpinner;
     private Spinner durationSpinner;
@@ -156,6 +172,33 @@ public class CreateExperiment extends AppCompatActivity {
         durationSpinner = findViewById(R.id.duration_spinner);
 //        runningSwitch = findViewById(R.id.running_switch);
         loadingScreen = findViewById(R.id.loading_screen);
+
+        // Initialize views for the expandable Expectations section
+        reduceOverallTimeInput = findViewById(R.id.reduce_overall_time_input);
+        reduceAppTimeInput = findViewById(R.id.reduce_app_time_input);
+        reduceUnlockTimeInput = findViewById(R.id.reduce_unlock_time_input);
+        reduceCheckFrequencyInput = findViewById(R.id.reduce_check_frequency_input);
+
+        expectationsCard = findViewById(R.id.expectations_card);
+        expectationsHeader = findViewById(R.id.expectations_header);
+        expectationsContent = findViewById(R.id.expectations_content);
+        expandIcon = findViewById(R.id.expand_icon);
+
+        // Set up the click listener for the expectations header
+        expectationsHeader.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (expectationsContent.getVisibility() == View.GONE) {
+                    TransitionManager.beginDelayedTransition(expectationsCard, new AutoTransition());
+                    expectationsContent.setVisibility(View.VISIBLE);
+                    expandIcon.setImageResource(R.drawable.expand_less);
+                } else {
+                    TransitionManager.beginDelayedTransition(expectationsCard, new AutoTransition());
+                    expectationsContent.setVisibility(View.GONE);
+                    expandIcon.setImageResource(R.drawable.expand_more);
+                }
+            }
+        });
 
         if (selectedExperiment != null){
             setDefaultValues();
@@ -304,18 +347,25 @@ public class CreateExperiment extends AppCompatActivity {
             String steps = stepsTakenInput.getText().toString();
             String schedule = scheduleSpinner.getSelectedItem().toString();
             String duration = durationSpinner.getSelectedItem().toString();
+
+            String reduceOverallTime = Objects.requireNonNull(reduceOverallTimeInput.getText()).toString().trim();
+            String reduceAppTime = Objects.requireNonNull(reduceAppTimeInput.getText()).toString().trim();
+            String reduceUnlockTime = Objects.requireNonNull(reduceUnlockTimeInput.getText()).toString().trim();
+            String reduceCheckFrequency = Objects.requireNonNull(reduceCheckFrequencyInput.getText()).toString().trim();
+
             boolean isRunning = true;
 
             if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
                 Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
                 hideLoadingScreen();
             } else {
-                saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning);
+                saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning, reduceOverallTime, reduceAppTime, reduceUnlockTime, reduceCheckFrequency);
             }
         });
     }
 
-    private void saveExperimentToFirestore(String title, String goal, String steps, String schedule,String duration , boolean isRunning) {
+    private void saveExperimentToFirestore(String title, String goal, String steps, String schedule,String duration , boolean isRunning, String reduceOverallTime, String reduceAppTime,
+                                           String reduceUnlockTime, String reduceCheckFrequency) {
         String deviceIdConcat = deviceId + "-" + DeviceModel;
 
         Instant nowUtc = Instant.now();
@@ -334,6 +384,12 @@ public class CreateExperiment extends AppCompatActivity {
         experiment.put("duration", duration);
         experiment.put("isRunning", isRunning);
         experiment.put("createdAt", epochSeconds);
+
+        // Add the expectations data if available
+        experiment.put("reduceOverallTime_MinutesPerDay", reduceOverallTime.isEmpty() ? null : reduceOverallTime);
+        experiment.put("reduceAppTime_MinutesPerDay", reduceAppTime.isEmpty() ? null : reduceAppTime);
+        experiment.put("reduceUnlockTime_MinutesPerUnlock", reduceUnlockTime.isEmpty() ? null : reduceUnlockTime);
+        experiment.put("reduceCheckFrequency_TimesPerDay", reduceCheckFrequency.isEmpty() ? null : reduceCheckFrequency);
 
         FireStoreDB.collection("Devices").document(deviceIdConcat)
                 .collection("experiments").document(documentId)
@@ -572,6 +628,12 @@ public class CreateExperiment extends AppCompatActivity {
                         String steps = lastExperiment.getString("steps");
                         String schedule = lastExperiment.getString("schedule");
                         String duration = lastExperiment.getString("duration");
+
+                        String reduceOverallTimeMinutesPerDay = lastExperiment.getString("reduceOverallTime_MinutesPerDay");
+                        String reduceAppTimeMinutesPerDay = lastExperiment.getString("reduceAppTime_MinutesPerDay");
+                        String reduceUnlockTimeMinutesPerUnlock = lastExperiment.getString("reduceUnlockTime_MinutesPerUnlock");
+                        String reduceCheckFrequencyTimesPerDay = lastExperiment.getString("reduceCheckFrequency_TimesPerDay");
+
 //                        Boolean isRunning = lastExperiment.getBoolean("isRunning");
 
                         // Example of setting values to UI elements (make sure this runs on the UI thread if it's not already)
@@ -587,6 +649,12 @@ public class CreateExperiment extends AppCompatActivity {
                             stepsTakenInput.setText(steps);
                             scheduleSpinner.setSelection(position);
                             durationSpinner.setSelection(durPosition);
+
+                            reduceOverallTimeInput.setText(reduceOverallTimeMinutesPerDay);
+                            reduceAppTimeInput.setText(reduceAppTimeMinutesPerDay);
+                            reduceUnlockTimeInput.setText(reduceUnlockTimeMinutesPerUnlock);
+                            reduceCheckFrequencyInput.setText(reduceCheckFrequencyTimesPerDay);
+
 //                            runningSwitch.setChecked(isRunning != null && isRunning);
                         });
 
