@@ -104,7 +104,7 @@ public class MainActivity extends Activity {
     private static final int CREATE_EXPERIMENT_REQUEST_CODE = 1;
     private static final int USAGE_STATS_PERMISSION_REQUEST_CODE = 1;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100;
-    private static final String PREFS_NAME = "MyPrefsFile";
+    private static final String PREFS_NAME = "MindfulFile";
     private static final String FIRST_RUN_DATE = "first_run_date";
     private static final String LAST_SURVEY_DATE = "last_survey_date";
     private static final String SURVEY_SHOWN = "survey_shown";
@@ -828,6 +828,7 @@ public class MainActivity extends Activity {
             if (hasUsageStatsPermission()) {
                 startAppUsageService();
             } else {
+                requestUsageStatsPermission();
                 Toast.makeText(this, "Usage access permission not granted.", Toast.LENGTH_SHORT).show();
             }
         } else if (requestCode == CREATE_EXPERIMENT_REQUEST_CODE && resultCode == RESULT_OK) {
