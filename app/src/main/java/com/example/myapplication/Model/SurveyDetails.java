@@ -7,8 +7,8 @@ import java.util.List;
 public class SurveyDetails {
     private List<QuestionAnswer> questionsAndAnswers;
     private List<String> selectedApps;
-    private long timestamp;
-    public SurveyDetails(List<QuestionAnswer> questionsAndAnswers, List<String> selectedApps, long timestamp) {
+    private String timestamp;
+    public SurveyDetails(List<QuestionAnswer> questionsAndAnswers, List<String> selectedApps, String timestamp) {
         this.questionsAndAnswers = questionsAndAnswers;
         this.selectedApps = selectedApps;
         this.timestamp = timestamp;
@@ -23,7 +23,7 @@ public class SurveyDetails {
         return selectedApps;
     }
 
-    public long getTimestamp() {
+    public String getTimestamp() {
         return timestamp;
     }
 }

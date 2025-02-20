@@ -5,8 +5,8 @@ import java.util.List;
 public class MonthlySurvey {
     private List<QuestionAnswer> questionsAndAnswers;
 
-    private long timestamp;
-    public MonthlySurvey(List<QuestionAnswer> questionsAndAnswers, long timestamp) {
+    private String timestamp;
+    public MonthlySurvey(List<QuestionAnswer> questionsAndAnswers, String timestamp) {
         this.questionsAndAnswers = questionsAndAnswers;
         this.timestamp = timestamp;
     }
@@ -17,7 +17,7 @@ public class MonthlySurvey {
     }
 
 
-    public long getTimestamp() {
+    public String getTimestamp() {
         return timestamp;
     }
 }

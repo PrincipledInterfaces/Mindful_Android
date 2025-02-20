@@ -84,6 +84,7 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -276,17 +277,16 @@ public class MainActivity extends Activity {
 
     private void saveSurveyDetailsToFirestore(List<QuestionAnswer> qa, List<String> selectedApps, String SurveyType) {
 
-        // Set up the date format to use UTC
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedTimestamp = dateFormat.format(new Date());
 
-        long timestamp = System.currentTimeMillis() / 1000L;
+//        long timestamp = System.currentTimeMillis() / 1000L;
 
         String surveyId = "survey_" + formattedTimestamp;
 
         if (SurveyType.equals("launch")){
-            SurveyDetails surveyDetails = new SurveyDetails(qa, selectedApps, timestamp);
+            SurveyDetails surveyDetails = new SurveyDetails(qa, selectedApps, formattedTimestamp);
             FireStoreDB.collection("Devices").document(deviceIdConcat)
                     .collection("launch_surveys").document(surveyId)
                     .set(surveyDetails)
@@ -298,7 +298,7 @@ public class MainActivity extends Activity {
                         Log.e("Firestore", "Error saving survey details", e);
                     });
         } else {
-            MonthlySurvey surveyDetails = new MonthlySurvey(qa, timestamp);
+            MonthlySurvey surveyDetails = new MonthlySurvey(qa, formattedTimestamp);
             FireStoreDB.collection("Devices").document(deviceIdConcat)
                     .collection("monthly_surveys").document(surveyId)
                     .set(surveyDetails)
@@ -661,21 +661,47 @@ public class MainActivity extends Activity {
                 });
     }
 
+//    private void displayExperimentDetails(DocumentSnapshot experiment) {
+//        String title = experiment.getString("title");
+//        String goal = experiment.getString("goal");
+//        String schedule = experiment.getString("schedule");
+//        String duration = experiment.getString("duration");
+//        Long createdAt = experiment.getLong("createdAt");
+//
+//        if (createdAt != null) {
+//            Instant createdAtInstant = Instant.ofEpochSecond(createdAt);
+//            LocalDate startDate = createdAtInstant.atZone(ZoneId.systemDefault()).toLocalDate();
+//            LocalDate today = LocalDate.now(ZoneId.systemDefault());
+//            long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
+//            boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
+//
+//            String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention." : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+//            String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
+//
+//            runningExperimentDetailsTextView.setText(Html.fromHtml(message));
+//        } else {
+//            runningExperimentDetailsTextView.setText("No Experiment Running!");
+//        }
+//    }
+
     private void displayExperimentDetails(DocumentSnapshot experiment) {
         String title = experiment.getString("title");
         String goal = experiment.getString("goal");
         String schedule = experiment.getString("schedule");
         String duration = experiment.getString("duration");
-        Long createdAt = experiment.getLong("createdAt");
+        String createdAt = experiment.getString("createdAt");
 
         if (createdAt != null) {
-            Instant createdAtInstant = Instant.ofEpochSecond(createdAt);
-            LocalDate startDate = createdAtInstant.atZone(ZoneId.systemDefault()).toLocalDate();
-            LocalDate today = LocalDate.now(ZoneId.systemDefault());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss", Locale.getDefault());
+            LocalDateTime createdAtDateTime = LocalDateTime.parse(createdAt, formatter);
+            LocalDate startDate = createdAtDateTime.toLocalDate();
+            LocalDate today = LocalDate.now();
             long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
             boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
 
-            String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention." : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+            String dayStatus = isInterventionDay
+                    ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention."
+                    : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
             String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
 
             runningExperimentDetailsTextView.setText(Html.fromHtml(message));
@@ -683,6 +709,7 @@ public class MainActivity extends Activity {
             runningExperimentDetailsTextView.setText("No Experiment Running!");
         }
     }
+
 
     private boolean isInterventionDay(String schedule, long day) {
         switch (schedule) {
@@ -732,7 +759,7 @@ public class MainActivity extends Activity {
 
     private List<DeviceEvent> parseDeviceEvents(String jsonData) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String todayDate = dateFormat.format(new Date());
 
         try {

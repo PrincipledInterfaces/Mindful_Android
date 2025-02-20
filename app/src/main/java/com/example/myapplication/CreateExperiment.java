@@ -55,14 +55,17 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -368,13 +371,20 @@ public class CreateExperiment extends AppCompatActivity {
                                            String reduceUnlockTime, String reduceCheckFrequency) {
         String deviceIdConcat = deviceId + "-" + DeviceModel;
 
-        Instant nowUtc = Instant.now();
-        long epochSeconds = nowUtc.getEpochSecond();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String formattedTimestamp = dateFormat.format(new Date());
 
-        Clock utcClock = Clock.systemUTC();
-        LocalDate currentDateUTC = LocalDate.now(utcClock);
+//        Instant nowUtc = Instant.now();
+//        long epochSeconds = nowUtc.getEpochSecond();
+//        long epochSeconds = System.currentTimeMillis() / 1000;
 
-        String documentId = "experiment_" + epochSeconds;
+//        Clock utcClock = Clock.systemUTC();
+//        LocalDate currentDateUTC = LocalDate.now(utcClock);
+
+        LocalDate currentDate = LocalDate.now();
+
+        String documentId = "experiment_" + formattedTimestamp;
 
         Map<String, Object> experiment = new HashMap<>();
         experiment.put("title", title);
@@ -383,7 +393,7 @@ public class CreateExperiment extends AppCompatActivity {
         experiment.put("schedule", schedule);
         experiment.put("duration", duration);
         experiment.put("isRunning", isRunning);
-        experiment.put("createdAt", epochSeconds);
+        experiment.put("createdAt", formattedTimestamp);
 
         // Add the expectations data if available
         experiment.put("reduceOverallTime_MinutesPerDay", reduceOverallTime.isEmpty() ? null : reduceOverallTime);
@@ -398,7 +408,7 @@ public class CreateExperiment extends AppCompatActivity {
                     cancelNotificationWorker();
                     Log.d("Firestore", "Experiment successfully written!");
                     if (isRunning) {
-                        initializeExperimentDays(deviceIdConcat, documentId, currentDateUTC, schedule, duration, title);
+                        initializeExperimentDays(deviceIdConcat, documentId, currentDate, schedule, duration, title);
                         showSuccessDialog(true);
                     } else {
                         showSuccessDialog(false);
