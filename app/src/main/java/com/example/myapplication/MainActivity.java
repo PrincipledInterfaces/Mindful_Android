@@ -778,7 +778,7 @@ public class MainActivity extends Activity {
                     JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
                     for (int j = 0; j < appUsageArray.length(); j++) {
                         JSONObject appUsageEvent = appUsageArray.getJSONObject(j);
-                        DeviceEvent appEvent = new DeviceEvent(appUsageEvent.getString("EventType"), appUsageEvent.getLong("Time"), appUsageEvent.getInt("Order"));
+                        DeviceEvent appEvent = new DeviceEvent(appUsageEvent.getString("EventType"), 0, appUsageEvent.getInt("Time"));
                         eventsList.add(appEvent);
                     }
                 }

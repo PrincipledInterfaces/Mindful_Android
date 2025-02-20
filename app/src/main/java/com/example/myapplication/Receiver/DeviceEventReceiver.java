@@ -88,9 +88,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     private void saveEvent(Context context, String eventType, long eventTime) {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         String date = dateFormat.format(new Date(eventTime));
 //        String time = timeFormat.format(new Date(eventTime));
@@ -141,9 +141,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         setLastUnlockTime(context, unlockTime);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         String date = dateFormat.format(new Date(unlockTime));
 //        String time = timeFormat.format(new Date(unlockTime));
@@ -184,9 +184,9 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     private void handleScreenOff(Context context) {
         long screenOffTime = System.currentTimeMillis();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        timeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String date = dateFormat.format(new Date(screenOffTime));
 //        String time = timeFormat.format(new Date(screenOffTime));
         long time = screenOffTime /1000;
@@ -459,8 +459,11 @@ private void uploadDataToFirestore(Context context) {
 //    deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
 
     String deviceIdConcat = deviceId + "-" + DeviceModel;
-    ZonedDateTime nowInUtc = ZonedDateTime.now(ZoneId.of("UTC"));
-    String todayDate = nowInUtc.toLocalDate().toString();
+//    ZonedDateTime nowInUtc = ZonedDateTime.now(ZoneId.of("UTC"));
+//    String todayDate = nowInUtc.toLocalDate().toString();
+
+    LocalDate today = LocalDate.now();
+    String todayDate = today.toString();
 
     String jsonData = loadDataFromFile(context);
     if (!jsonData.isEmpty()) {
