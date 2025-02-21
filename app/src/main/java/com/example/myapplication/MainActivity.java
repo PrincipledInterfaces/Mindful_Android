@@ -475,10 +475,10 @@ public class MainActivity extends Activity {
 
         // Find CheckBoxes
         TextView checkboxQuestion = surveyLayout.findViewById(R.id.checkbox_question);
-        CheckBox checkboxFocusMode = surveyLayout.findViewById(R.id.checkbox_focus_mode);
-        CheckBox checkboxGrayscaleScreen = surveyLayout.findViewById(R.id.checkbox_grayscale_screen);
-        CheckBox checkboxNotificationsOff = surveyLayout.findViewById(R.id.checkbox_notifications_off);
-        CheckBox checkboxDeletedApps = surveyLayout.findViewById(R.id.checkbox_deleted_apps);
+        CheckBox checkboxEasyMajor = surveyLayout.findViewById(R.id.checkbox_easy_major);
+        CheckBox checkboxDifficultMajor = surveyLayout.findViewById(R.id.checkbox_difficult_major);
+        CheckBox checkboxEasyMinor = surveyLayout.findViewById(R.id.checkbox_easy_minor);
+        CheckBox checkboxDifficultMinor = surveyLayout.findViewById(R.id.checkbox_difficult_minor);
 
         MaterialButton submitButton = surveyLayout.findViewById(R.id.submit_button);
 
@@ -499,16 +499,16 @@ public class MainActivity extends Activity {
 
             // Get checkbox states
             String checkboxQuestionText = checkboxQuestion.getText().toString();
-            boolean isFocusModeChecked = checkboxFocusMode.isChecked();
-            boolean isGrayscaleScreenChecked = checkboxGrayscaleScreen.isChecked();
-            boolean areNotificationsOffChecked = checkboxNotificationsOff.isChecked();
-            boolean areDeletedAppsChecked = checkboxDeletedApps.isChecked();
+            boolean isEasyMajorChecked = checkboxEasyMajor.isChecked();
+            boolean isDifficultMajorChecked = checkboxDifficultMajor.isChecked();
+            boolean isEasyMinor = checkboxEasyMinor.isChecked();
+            boolean isDifficultMinor = checkboxDifficultMinor.isChecked();
 
             List<QuestionAnswer> checkboxQuestionAndAnswers = new ArrayList<>();
-            checkboxQuestionAndAnswers.add(new QuestionAnswer("Focus Mode: ", String.valueOf(isFocusModeChecked)));
-            checkboxQuestionAndAnswers.add(new QuestionAnswer("Grayscale screen: ", String.valueOf(isGrayscaleScreenChecked)));
-            checkboxQuestionAndAnswers.add(new QuestionAnswer("Notifications off: ", String.valueOf(areNotificationsOffChecked)));
-            checkboxQuestionAndAnswers.add(new QuestionAnswer("Deleted apps: ", String.valueOf(areDeletedAppsChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Easy to implement AND Major impact: ", String.valueOf(isEasyMajorChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Difficult to implement AND Major impact: ", String.valueOf(isDifficultMajorChecked)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Easy to implement AND Minor impact: ", String.valueOf(isEasyMinor)));
+            checkboxQuestionAndAnswers.add(new QuestionAnswer("Difficult to implement AND Minor impact: ", String.valueOf(isDifficultMinor)));
 
             List<QuestionAnswer> questionsAndAnswers = new ArrayList<>();
             questionsAndAnswers.add(new QuestionAnswer(question1Text, answer1Text));

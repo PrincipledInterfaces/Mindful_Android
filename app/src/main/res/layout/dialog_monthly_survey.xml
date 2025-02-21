@@ -170,7 +170,7 @@
                 android:id="@+id/question3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Are there any new habits you adopted that you would like to change?"
+                android:text="Did you have any issues or make any mistakes following the schedule toggling your interventions ON and OFF"
                 android:textSize="18sp"
                 android:layout_marginTop="16dp"
                 android:paddingBottom="10dp" />
@@ -209,7 +209,7 @@
                 android:id="@+id/checkbox_question"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Check any of the following interventions if you were using them regularly this month:"
+                android:text="How would you rate the interventions you have implemented?"
                 android:textSize="18sp"
                 android:layout_marginTop="16dp"
                 android:paddingBottom="8dp" />
@@ -223,18 +223,18 @@
                 android:layout_marginTop="16dp">
 
                 <CheckBox
-                    android:id="@+id/checkbox_focus_mode"
+                    android:id="@+id/checkbox_easy_major"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Focus mode" />
+                    android:text="Easy to implement &amp; Major impact" />
 
                 <CheckBox
-                    android:id="@+id/checkbox_grayscale_screen"
+                    android:id="@+id/checkbox_difficult_major"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Grayscale screen" />
+                    android:text="Difficult to implement &amp; Major impact" />
             </LinearLayout>
 
             <LinearLayout
@@ -245,18 +245,18 @@
                 android:layout_marginTop="8dp">
 
                 <CheckBox
-                    android:id="@+id/checkbox_notifications_off"
+                    android:id="@+id/checkbox_easy_minor"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Notifications off" />
+                    android:text="Easy to implement &amp; Minor impact" />
 
                 <CheckBox
-                    android:id="@+id/checkbox_deleted_apps"
+                    android:id="@+id/checkbox_difficult_minor"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Deleted apps" />
+                    android:text="Difficult to implement &amp; Minor impact" />
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
