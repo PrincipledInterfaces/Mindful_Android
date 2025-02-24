@@ -170,7 +170,7 @@
                 android:id="@+id/question3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Did you have any issues or make any mistakes following the schedule toggling your interventions ON and OFF"
+                android:text="Did you have any issues or make any mistakes following the schedule toggling your interventions ON and OFF?"
                 android:textSize="18sp"
                 android:layout_marginTop="16dp"
                 android:paddingBottom="10dp" />
@@ -249,14 +249,14 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Easy to implement &amp; Minor impact" />
+                    android:text="Easy to implement &amp; Minor/No Impact" />
 
                 <CheckBox
                     android:id="@+id/checkbox_difficult_minor"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Difficult to implement &amp; Minor impact" />
+                    android:text="Difficult to implement &amp; Minor/No Impact" />
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
