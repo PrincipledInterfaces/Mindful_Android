@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
 
 import com.example.myapplication.Model.Session;
 
@@ -57,6 +58,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
     }
     @Override
     public void onReceive(Context context, Intent intent) {
+        Executors.newSingleThreadExecutor().execute(() -> {
         if (deviceId == null) {
             deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         }
@@ -82,8 +84,8 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                     break;
             }
         }
+    });
     }
-
 
     private void saveEvent(Context context, String eventType, long eventTime) {
 
@@ -388,9 +390,17 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
 
 
+    private String getFileNameForDate(String date) {
+        return "DeviceEvent_" + date + ".json";
+    }
 
-
-
+    private void saveDataToFile(Context context, String date, String data) {
+        try (FileOutputStream fos = context.openFileOutput(getFileNameForDate(date), Context.MODE_PRIVATE)) {
+            fos.write(data.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            Log.e("DeviceEventReceiver", "Error writing to file", e);
+        }
+    }
 
     private void saveDataToFile(Context context, String data) {
         try (FileOutputStream fos = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE)) {

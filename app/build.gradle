@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.firebase.crashlytics'
 }
 
 android {
@@ -84,6 +85,7 @@ dependencies {
     implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
     implementation("com.google.firebase:firebase-messaging")
     implementation 'com.google.firebase:firebase-installations'
+    implementation("com.google.firebase:firebase-crashlytics")
 
     // google services
     implementation "androidx.work:work-runtime:2.9.0"
