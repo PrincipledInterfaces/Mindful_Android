@@ -99,7 +99,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         long time = eventTime/1000;
         try {
             JSONObject root = new JSONObject();
-            String jsonData = loadDataFromFile(context);
+            String jsonData = loadDataFromFile(context, date);
             if (!jsonData.isEmpty()) {
                 root = new JSONObject(jsonData);
             }
@@ -119,7 +119,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
             eventsForDate.put(eventDetails);
 
-            saveDataToFile(context, root.toString());
+            saveDataToFile(context, date, root.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -154,7 +154,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         try {
             // Load existing data or initialize a new structure
             JSONObject root;
-            String jsonData = loadDataFromFile(context);
+            String jsonData = loadDataFromFile(context, date);
             if (!jsonData.isEmpty()) {
                 root = new JSONObject(jsonData);
             } else {
@@ -176,7 +176,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             dateEvents.put(eventDetails);
 
             // Save the updated JSON structure
-            saveDataToFile(context, root.toString());
+            saveDataToFile(context, date, root.toString());
 //            Log.e("DeviceEventReceiver", root.toString());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -201,7 +201,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
 
         try {
             JSONObject root;
-            String jsonData = loadDataFromFile(context);
+            String jsonData = loadDataFromFile(context, date);
             if (!jsonData.isEmpty()) {
                 root = new JSONObject(jsonData);
             } else {
@@ -259,7 +259,7 @@ public class DeviceEventReceiver extends BroadcastReceiver {
             dateEvents.put(eventDetails);
 
             // Save the updated JSON structure back to the file
-            saveDataToFile(context, root.toString());
+            saveDataToFile(context, date, root.toString());
             // uploading data session wise with start and end time
 //            uploadDataToFirestore(context, processEventsToSessions(dateEvents));
             // uploading in events array
@@ -402,30 +402,36 @@ public class DeviceEventReceiver extends BroadcastReceiver {
         }
     }
 
-    private void saveDataToFile(Context context, String data) {
-        try (FileOutputStream fos = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE)) {
-            fos.write(data.getBytes(StandardCharsets.UTF_8));
-        } catch (FileNotFoundException e) {
-            Log.e("DeviceEventReceiver", "File not found", e);
-        } catch (IOException e) {
-            Log.e("DeviceEventReceiver", "Error writing to file", e);
-        }
-    }
-
-    public static String loadDataFromFile(Context context) {
+    private String loadDataFromFile(Context context, String date) {
         StringBuilder jsonData = new StringBuilder();
-        try (FileInputStream fis = context.openFileInput(FILE_NAME)) {
+        try (FileInputStream fis = context.openFileInput(getFileNameForDate(date))) {
             int character;
             while ((character = fis.read()) != -1) {
                 jsonData.append((char) character);
             }
         } catch (FileNotFoundException e) {
+            // File may not exist yet
             Log.e("DeviceEventReceiver", "File not found", e);
         } catch (IOException e) {
             Log.e("DeviceEventReceiver", "Error reading from file", e);
         }
         return jsonData.toString();
     }
+
+//    public static String loadDataFromFile(Context context) {
+//        StringBuilder jsonData = new StringBuilder();
+//        try (FileInputStream fis = context.openFileInput(FILE_NAME)) {
+//            int character;
+//            while ((character = fis.read()) != -1) {
+//                jsonData.append((char) character);
+//            }
+//        } catch (FileNotFoundException e) {
+//            Log.e("DeviceEventReceiver", "File not found", e);
+//        } catch (IOException e) {
+//            Log.e("DeviceEventReceiver", "Error reading from file", e);
+//        }
+//        return jsonData.toString();
+//    }
 
     private void setScreenOnFlag(Context context, boolean screenOn) {
         SharedPreferences prefs = context.getSharedPreferences("DeviceEventPrefs", Context.MODE_PRIVATE);
@@ -475,7 +481,7 @@ private void uploadDataToFirestore(Context context) {
     LocalDate today = LocalDate.now();
     String todayDate = today.toString();
 
-    String jsonData = loadDataFromFile(context);
+    String jsonData = loadDataFromFile(context, todayDate);
     if (!jsonData.isEmpty()) {
         try {
             JSONObject jsonObject = new JSONObject(jsonData);
@@ -499,7 +505,6 @@ private void uploadDataToFirestore(Context context) {
                     JSONArray appUsageArray = eventObj.getJSONArray("AppUsage");
                     for (int j = 0; j < appUsageArray.length(); j++) {
                         JSONObject appUsageEvent = appUsageArray.getJSONObject(j);
-//                        JSONObject appDetails = appUsageEvent.getJSONObject("Event");
 
                         Map<String, Object> appEvent = new HashMap<>();
                         appEvent.put("EventType", appUsageEvent.getString("EventType"));  // "EventType" now contains the app name

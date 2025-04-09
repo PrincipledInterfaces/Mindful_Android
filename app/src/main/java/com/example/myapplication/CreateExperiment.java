@@ -236,44 +236,6 @@ public class CreateExperiment extends AppCompatActivity {
         stepsTakenInput.setText(android.text.TextUtils.join("\n", selectedExperiment.steps));
     }
 
-//    private void loadExperimentsData() {
-//    try {
-//        // Open the raw resource
-//        InputStream inputStream = getResources().openRawResource(R.raw.predefined_experiments);
-//
-//        // Use an InputStreamReader to read the file
-//        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-//        BufferedReader reader = new BufferedReader(inputStreamReader);
-//
-//        // Read the JSON file into a StringBuilder
-//        StringBuilder jsonStringBuilder = new StringBuilder();
-//        String line;
-//
-//        while ((line = reader.readLine()) != null) {
-//            jsonStringBuilder.append(line);
-//        }
-//
-//        // Log the raw JSON content (optional, for debugging)
-//        Log.d("JSON Data", jsonStringBuilder.toString());
-//
-//        // Now parse the JSON using Gson
-//        Type experimentListType = new TypeToken<List<Experiment>>() {}.getType();
-//        experimentsList = new Gson().fromJson(jsonStringBuilder.toString(), experimentListType);
-//
-//        if (experimentsList == null) {
-//            Log.e("ErrorJson", "Parsed list is null.");
-//        } else {
-//            Log.d("Success", "Experiments loaded successfully.");
-//        }
-//    } catch (Resources.NotFoundException e) {
-//        Log.e("ErrorJson", "Resource not found: " + e.getMessage());
-//    } catch (IOException e) {
-//        Log.e("ErrorJson", "Error reading the file: " + e.getMessage());
-//    } catch (JsonSyntaxException e) {
-//        Log.e("ErrorJson", "Error parsing JSON: " + e.getMessage());
-//    }
-//    }
-
 
     private Experiment getExperimentById(int id) {
         if (experimentsList == null) {
@@ -374,13 +336,6 @@ public class CreateExperiment extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
 //        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedTimestamp = dateFormat.format(new Date());
-
-//        Instant nowUtc = Instant.now();
-//        long epochSeconds = nowUtc.getEpochSecond();
-//        long epochSeconds = System.currentTimeMillis() / 1000;
-
-//        Clock utcClock = Clock.systemUTC();
-//        LocalDate currentDateUTC = LocalDate.now(utcClock);
 
         LocalDate currentDate = LocalDate.now();
 

@@ -70,9 +70,18 @@ public class DeviceEventAdapter extends RecyclerView.Adapter<DeviceEventAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         DeviceEvent event = eventList.get(position);
         holder.eventTypeTextView.setText(event.getEventType());
-//        holder.timeTextView.setText(String.valueOf(event.getTime())); // Format time as needed
         holder.timeTextView.setText(formatTime(event.getTime()));
-        holder.durationTextView.setText("Duration: " + event.getDuration() + "s");
+//        holder.durationTextView.setText("Duration: " + event.getDuration() + "s");
+
+        if (event.getDuration() == 0) {
+            holder.durationTextView.setVisibility(View.GONE);
+            holder.progressBar.setVisibility(View.GONE);
+        } else {
+            holder.durationTextView.setVisibility(View.VISIBLE);
+            holder.progressBar.setVisibility(View.VISIBLE);
+            holder.durationTextView.setText("Duration: " + event.getDuration() + "s");
+        }
+
         holder.progressBar.setProgress((int) event.getDuration());
 
     }

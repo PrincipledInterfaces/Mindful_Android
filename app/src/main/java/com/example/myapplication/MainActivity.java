@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.AppOpsManager;
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,6 +21,7 @@ import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
+import android.text.method.LinkMovementMethod;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,6 +35,7 @@ import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -65,6 +69,7 @@ import com.example.myapplication.Util.AuthenticationUtils;
 import com.example.myapplication.Util.FirebaseUtils;
 import com.example.myapplication.utils.Utils;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -533,19 +538,6 @@ public class MainActivity extends Activity {
         SurveyMonthlyDialog.show();
     }
 
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        updateRunningExperimentDetails();
-//        if (shouldShowSurvey && (surveyDialog == null || !surveyDialog.isShowing())) {
-//            showSurveyModal();
-//        }
-//
-//        if (shouldShowMonthlySurvey && (SurveyMonthlyDialog == null || !SurveyMonthlyDialog.isShowing())) {
-//            showMonthlySurveyModal();
-//        }
-//    }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -668,16 +660,19 @@ public class MainActivity extends Activity {
 //        String goal = experiment.getString("goal");
 //        String schedule = experiment.getString("schedule");
 //        String duration = experiment.getString("duration");
-//        Long createdAt = experiment.getLong("createdAt");
+//        String createdAt = experiment.getString("createdAt");
 //
 //        if (createdAt != null) {
-//            Instant createdAtInstant = Instant.ofEpochSecond(createdAt);
-//            LocalDate startDate = createdAtInstant.atZone(ZoneId.systemDefault()).toLocalDate();
-//            LocalDate today = LocalDate.now(ZoneId.systemDefault());
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss", Locale.getDefault());
+//            LocalDateTime createdAtDateTime = LocalDateTime.parse(createdAt, formatter);
+//            LocalDate startDate = createdAtDateTime.toLocalDate();
+//            LocalDate today = LocalDate.now();
 //            long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
 //            boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
 //
-//            String dayStatus = isInterventionDay ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention." : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+//            String dayStatus = isInterventionDay
+//                    ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention."
+//                    : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
 //            String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
 //
 //            runningExperimentDetailsTextView.setText(Html.fromHtml(message));
@@ -693,24 +688,67 @@ public class MainActivity extends Activity {
         String duration = experiment.getString("duration");
         String createdAt = experiment.getString("createdAt");
 
-        if (createdAt != null) {
+        if (createdAt != null && duration != null) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss", Locale.getDefault());
             LocalDateTime createdAtDateTime = LocalDateTime.parse(createdAt, formatter);
             LocalDate startDate = createdAtDateTime.toLocalDate();
             LocalDate today = LocalDate.now();
             long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
-            boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
 
-            String dayStatus = isInterventionDay
-                    ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention."
-                    : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
-            String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
+            // Parse duration (e.g., "4 weeks" -> 4)
+            int weeks = 0;
+            try {
+                weeks = Integer.parseInt(duration.replaceAll("[^0-9]", ""));
+            } catch (NumberFormatException e) {
+                Log.e("DurationParse", "Could not parse duration: " + duration);
+            }
 
-            runningExperimentDetailsTextView.setText(Html.fromHtml(message));
+            int totalDurationInDays = weeks * 7;
+
+            if (daysElapsed > totalDurationInDays) {
+                // Experiment completed
+//                String Congrats_message = "🎉 <b>Congratulations!</b> You’ve completed the <font color='#00FF00'><b>" + title + "</b></font> experiment.\n\n" + "💡 Use the following code to redeem your Amazon gift card on our website:\n\n"
+//                        + "<b>" + fid + "</b>";
+//                runningExperimentDetailsTextView.setText(Html.fromHtml(Congrats_message));
+                String Congrats_message = "<b>🎉 Congratulations!</b><br>"
+                        + "You’ve completed the <b>\"" + title + "\"</b> experiment.<br><br>"
+                        + "Visit <a href='https://payments.principledinterfaces.com'>payments.principledinterfaces.com</a><br>"
+                        + "and enter the code below to redeem your Amazon gift card:";
+
+
+                runningExperimentDetailsTextView.setText(Html.fromHtml(Congrats_message, Html.FROM_HTML_MODE_LEGACY));
+                runningExperimentDetailsTextView.setMovementMethod(LinkMovementMethod.getInstance());
+
+                // Show the gift card code layout
+                MaterialCardView giftCardLayout = findViewById(R.id.giftCardCodeLayout);
+                TextView codeTextView = findViewById(R.id.giftCardCodeTextView);
+                LinearLayout copyButton = findViewById(R.id.giftCardCodeLinearLayout);
+
+                giftCardLayout.setVisibility(View.VISIBLE);
+                codeTextView.setText(fid);
+
+                copyButton.setOnClickListener(v -> {
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipData clip = ClipData.newPlainText("Gift Card Code", fid);
+                    clipboard.setPrimaryClip(clip);
+                    Toast.makeText(this, "Code copied to clipboard!", Toast.LENGTH_SHORT).show();
+                });
+
+            } else {
+                // Still running
+                boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
+                String dayStatus = isInterventionDay
+                        ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention."
+                        : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
+
+                String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
+                runningExperimentDetailsTextView.setText(Html.fromHtml(message, Html.FROM_HTML_MODE_LEGACY));
+            }
         } else {
             runningExperimentDetailsTextView.setText("No Experiment Running!");
         }
     }
+
 
 
     private boolean isInterventionDay(String schedule, long day) {
@@ -726,10 +764,22 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String getTodayFileName() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String todayDate = sdf.format(new Date());
+        return "DeviceEvent_" + todayDate + ".json";
+    }
+
     private void fetchAndDisplayEvents() {
         try {
-            jsonData = readJsonFromFile("DeviceEvent.json");
+
+            // Get today's date and build the filename
+            String todayFileName = getTodayFileName();
+
+            // Read only today's file
+            jsonData = readJsonFromFile(todayFileName);
             events = parseDeviceEvents(jsonData);
+
             if (events.isEmpty()) {
                 emptyMessageTextView.setVisibility(View.VISIBLE); // Show empty message
                 recyclerView.setVisibility(View.GONE); // Hide RecyclerView
@@ -740,8 +790,8 @@ public class MainActivity extends Activity {
             }
         } catch (Exception e) {
             Log.e("Reading Json File", "An unexpected error occurred", e);
-            emptyMessageTextView.setVisibility(View.VISIBLE); // Show empty message on error
-            recyclerView.setVisibility(View.GONE); // Hide RecyclerView
+            emptyMessageTextView.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.GONE);
         }
     }
 
