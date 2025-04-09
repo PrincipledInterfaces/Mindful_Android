@@ -360,6 +360,11 @@ public class DeviceEventReceiver extends BroadcastReceiver {
                         try {
                             ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
                             appName = (String) packageManager.getApplicationLabel(applicationInfo);
+
+                            if (appName.length() > 30) {
+                                appName = appName.substring(0, 30); // limit app name to 30 chars
+                            }
+
                             if (packageName.contains("com.whatsapp.w4b")) {
                                 appName = "WhatsApp Business";
                             }
