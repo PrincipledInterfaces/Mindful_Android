@@ -655,32 +655,6 @@ public class MainActivity extends Activity {
                 });
     }
 
-//    private void displayExperimentDetails(DocumentSnapshot experiment) {
-//        String title = experiment.getString("title");
-//        String goal = experiment.getString("goal");
-//        String schedule = experiment.getString("schedule");
-//        String duration = experiment.getString("duration");
-//        String createdAt = experiment.getString("createdAt");
-//
-//        if (createdAt != null) {
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss", Locale.getDefault());
-//            LocalDateTime createdAtDateTime = LocalDateTime.parse(createdAt, formatter);
-//            LocalDate startDate = createdAtDateTime.toLocalDate();
-//            LocalDate today = LocalDate.now();
-//            long daysElapsed = ChronoUnit.DAYS.between(startDate, today) + 1;
-//            boolean isInterventionDay = isInterventionDay(Objects.requireNonNull(schedule), daysElapsed);
-//
-//            String dayStatus = isInterventionDay
-//                    ? "an <font color='#FF0000'><b>INTERVENTION DAY</b></font>, be sure to use your intervention."
-//                    : "a <font color='#00FF00'><b>CONTROL DAY</b></font>";
-//            String message = "You are on <b>Day " + daysElapsed + "</b> of your <b>" + title + "</b> experiment; Today is " + dayStatus;
-//
-//            runningExperimentDetailsTextView.setText(Html.fromHtml(message));
-//        } else {
-//            runningExperimentDetailsTextView.setText("No Experiment Running!");
-//        }
-//    }
-
     private void displayExperimentDetails(DocumentSnapshot experiment) {
         String title = experiment.getString("title");
         String goal = experiment.getString("goal");
@@ -707,9 +681,7 @@ public class MainActivity extends Activity {
 
             if (daysElapsed > totalDurationInDays) {
                 // Experiment completed
-//                String Congrats_message = "🎉 <b>Congratulations!</b> You’ve completed the <font color='#00FF00'><b>" + title + "</b></font> experiment.\n\n" + "💡 Use the following code to redeem your Amazon gift card on our website:\n\n"
-//                        + "<b>" + fid + "</b>";
-//                runningExperimentDetailsTextView.setText(Html.fromHtml(Congrats_message));
+
                 String Congrats_message = "<b>🎉 Congratulations!</b><br>"
                         + "You’ve completed the <b>\"" + title + "\"</b> experiment.<br><br>"
                         + "Visit <a href='https://payments.principledinterfaces.com'>payments.principledinterfaces.com</a><br>"

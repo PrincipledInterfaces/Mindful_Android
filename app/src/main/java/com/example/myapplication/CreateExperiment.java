@@ -323,6 +323,9 @@ public class CreateExperiment extends AppCompatActivity {
             if (title.isEmpty() || goal.isEmpty() || steps.isEmpty()) {
                 Toast.makeText(CreateExperiment.this, "Please fill all the fields", Toast.LENGTH_SHORT).show();
                 hideLoadingScreen();
+            } else if (reduceOverallTime.isEmpty() || reduceAppTime.isEmpty() || reduceUnlockTime.isEmpty() || reduceCheckFrequency.isEmpty()) {
+                Toast.makeText(CreateExperiment.this, "Please fill all the fields in \"Set your Expectations\"", Toast.LENGTH_SHORT).show();
+                hideLoadingScreen();
             } else {
                 saveExperimentToFirestore(title, goal, steps, schedule, duration, isRunning, reduceOverallTime, reduceAppTime, reduceUnlockTime, reduceCheckFrequency);
             }
